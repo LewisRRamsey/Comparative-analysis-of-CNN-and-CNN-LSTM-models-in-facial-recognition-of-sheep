@@ -4,6 +4,7 @@ import torchvision.transforms as transforms
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim
+from torch.optim.lr_scheduler import StepLR
 import time
 import torchvision
 
@@ -47,8 +48,38 @@ class SheepFaceClassifier(nn.Module):
             for parameters in layer.parameters():
                 parameters.requires_grad = True
 
-    # look into decaying the learning rate during training
-        
+    def train(self, epochs, train_loader):
+        # defining the loss function and the optimiser
+        loss_criterion = nn.CrossEntropyLoss()
+        optimiser = torch.optim.Adam(self.parameters(), lr = 0.01)
+        scheduler = StepLR(optimiser, step_size = 3, gamma = 0.1)
+        running_loss = 0.0
+        number_of_batches = 0
+        for epoch in range(1, epochs + 1):
+            for inputs, labels in train_loader:
+                # zeroing the gradients of the optimiser
+                optimiser.zero_grad()
+                # passing the inputs through the model to get the outputs
+                outputs = self(inputs)
+                loss = loss_criterion(outputs, labels)
+                # backpropagating the loss and updating the weights
+                running_loss = running_loss + loss.item()
+                number_of_batches += 1
+                loss.backward()
+                optimiser.step()
+                scheduler.step()
+            print(f"Epoch [{epoch}] Train Loss: {running_loss / number_of_batches}")
+        return running_loss / number_of_batches
+
+
     
 # creating an instance of the model
 model = SheepFaceClassifier()
+
+# ensures training is only done when this script is run directly
+# prevents training from being done when this script is imported as a module, e.g for testing
+if __name__ == '__main__':
+    model.train(epochs=10, train_loader=train_loader)
+    torch.save(model.state_dict(), './CNN facial recognition model.pth')
+    print('Training is complete')
+    
