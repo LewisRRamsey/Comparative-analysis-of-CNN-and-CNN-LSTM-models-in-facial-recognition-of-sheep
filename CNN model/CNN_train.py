@@ -80,6 +80,6 @@ model = SheepFaceClassifier()
 # prevents training from being done when this script is imported as a module, e.g for testing
 if __name__ == '__main__':
     model.train(epochs=10, train_loader=train_loader)
-    torch.save(model.state_dict(), './CNN facial recognition model.pth')
+    torch.save(model.state_dict(), './CNN_facial_recognition_model.pth')
     print('Training is complete')
-    
+
