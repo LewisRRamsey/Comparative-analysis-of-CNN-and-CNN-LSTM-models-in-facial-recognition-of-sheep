@@ -31,18 +31,33 @@ class SheepFaceClassifierCNNLSTM(nn.Module):
         super().__init__()
         # loading in ResNet50 model
         self.pretrained_model = torchvision.models.resnet50(weights=torchvision.models.ResNet50_Weights.IMAGENET1K_V2)
-        # changing the fully connected layer to a sequence of an LSTM layer and fully connected layer
+        print(self.pretrained_model)
+        # defining initial layer to be the same as the ResNet50 model, as the input images are 3 channel RGB images
+        self.pretrained_model.conv1 = nn.Conv2d(in_channels=3, out_channels=64, kernel_size=7, stride=2, padding=3, bias=False)
+        self.pretrained_model.bn1 = nn.BatchNorm2d(num_features=64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        self.pretrained_model.relu = nn.ReLU(inplace=True)
+        self.pretrained_model.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1, dilation=1, ceil_mode=False)
+        # defining the lstm layer
+        self.lstm = nn.LSTM(input_size=2048, hidden_size=200, num_layers=1, batch_first=True)
         # changing the number of output features in the fully connected layer to 100, as there are 100 classes in the dataset
-        self.pretrained_model.fc = nn.Sequential(
-            nn.LSTM(input_size=2048, hidden_size=100, num_layers=1, batch_first=True, bidirectional = True),
-            nn.Linear(in_features=200, out_features=100, bias=True)
-        )
+        self.pretrained_model.fc = nn.Linear(in_features=200, out_features=100, bias=True)
         self.new_layers = [self.pretrained_model.layer4, self.pretrained_model.fc]
 
     def forward(self, x):
         # passing the input through the ResNet50 model
-        return self.pretrained_model(x)
-    
+        y = self.pretrained_model.conv1(x)
+        y = self.pretrained_model.bn1(y)
+        y = self.pretrained_model.relu(y)
+        y = self.pretrained_model.maxpool(y)
+        y = self.pretrained_model.layer1(y)
+        y = self.pretrained_model.layer2(y)
+        y = self.pretrained_model.layer3(y)
+        y = self.pretrained_model.layer4(y)
+        # reshaping the output of layer 4 to be compatible with the LSTM layer (3D tensor)
+        y = y.view(y.size(0), -1, 2048)
+        y, (h_n, c_n) = self.lstm(y)
+        return self.pretrained_model.fc(y[:, -1, :])
+
     def fine_tune(self):
         # initially freezing all the layers in the pretrained model
         for parameters in self.pretrained_model.parameters():
@@ -72,6 +87,7 @@ class SheepFaceClassifierCNNLSTM(nn.Module):
                 loss.backward()
                 optimiser.step()
                 scheduler.step()
+                print("Batch Train Loss: ", loss.item())
             print(f"Epoch [{epoch}] Train Loss: {running_loss / number_of_batches}")
         return running_loss / number_of_batches
 
