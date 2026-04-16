@@ -7,9 +7,10 @@ import torch.optim
 from torch.optim.lr_scheduler import StepLR
 import time
 import torchvision
+import visualtorch
 
 # defining the path to the dataset
-dataset_train_path = "C:/University/Year 3 project/Project files/sheep_face_working_dataset/train"
+dataset_train_path = "sheep_face_working_dataset/train"
 
 # normalising the images using ImageNet mean and standard deviation for ResNet50 model, as well as resizing the images and converting them to tensors
 dataset_transform = transforms.Compose([
@@ -40,7 +41,7 @@ class SheepFaceClassifierCNNLSTM(nn.Module):
         # defining the lstm layer
         self.lstm = nn.LSTM(input_size=2048, hidden_size=200, num_layers=2, batch_first=True, bidirectional = True)
         # changing the number of output features in the fully connected layer to 100, as there are 100 classes in the dataset
-        self.pretrained_model.fc = nn.Linear(in_features=200, out_features=100, bias=True)
+        self.pretrained_model.fc = nn.Linear(in_features=400, out_features=100, bias=True)
         self.new_layers = [self.pretrained_model.layer4, self.pretrained_model.fc]
 
     def forward(self, x):
@@ -70,8 +71,8 @@ class SheepFaceClassifierCNNLSTM(nn.Module):
     def train(self, epochs, train_loader):
         # defining the loss function and the optimiser
         loss_criterion = nn.CrossEntropyLoss()
-        optimiser = torch.optim.Adam(self.parameters(), lr = 0.01)
-        scheduler = StepLR(optimiser, step_size = 3, gamma = 0.1)
+        optimiser = torch.optim.Adam(self.parameters(), lr = 0.001)
+        scheduler = StepLR(optimiser, step_size = 5, gamma = 0.1)
         running_loss = 0.0
         number_of_batches = 0
         for epoch in range(1, epochs + 1):
@@ -99,6 +100,9 @@ model = SheepFaceClassifierCNNLSTM()
 # ensures training is only done when this script is run directly
 # prevents training from being done when this script is imported as a module, e.g for testing
 if __name__ == '__main__':
-    model.train(epochs=10, train_loader=train_loader)
-    torch.save(model.state_dict(), './CNN_LSTM_facial_recognition_model.pth')
-    print('Training is complete')
+    # model.train(epochs=1, train_loader=train_loader)    
+    # torch.save(model.state_dict(), './CNN_LSTM_facial_recognition_model.pth')
+    # print('Training is complete')
+
+    vt = visualtorch.lenet_view(model = model, input_shape = (1, 3, 224, 224), to_file = "CNNLSTM_model_LeNet_view.png")
+    print("LeNet view saved as CNNLSTM_model_LeNet_view.png")
