@@ -9,7 +9,7 @@ import random
 # function for generating noise for images (put as preprocessing function in ImageDataGenerator) 
 def generate_gaussian_noise(image):
     image = image.astype('float32')
-    noise = nr.normal(loc = 0.0, scale = 10, size = image.shape)
+    noise = nr.normal(loc = 0.0, scale = 0.5, size = image.shape)
     noisy_image = image + noise
     return noisy_image
 
@@ -24,11 +24,10 @@ datagen_noise = ImageDataGenerator(
 # main augmentation process for all previously generated images including suitable rotation, brightness adjustment and shearing (orientation change simulation)
 datagen_main = ImageDataGenerator(
         rotation_range = 30,
-        brightness_range = (0.02, 1.75),
-        shear_range = 10,
-        zoom_range = 0.12,
-        width_shift_range = 0.12,
-        height_shift_range = 0.12)
+        brightness_range = (0.7, 1.3),
+        zoom_range = 0.1,
+        width_shift_range = 0.1,
+        height_shift_range = 0.1)
 
 def image_processing_function(input_directory, filename):
         image_path = os.path.join(input_directory, filename)

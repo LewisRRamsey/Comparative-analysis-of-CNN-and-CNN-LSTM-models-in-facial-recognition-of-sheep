@@ -39,10 +39,6 @@ datagen_rotate = ImageDataGenerator(
 datagen_bright = ImageDataGenerator(
         brightness_range = (0.02, 2))
 
-# sheared image generation process
-datagen_shear = ImageDataGenerator(
-        shear_range = 20)
-
 # width shfited image generation process
 datagen_width = ImageDataGenerator(
         width_shift_range = 0.2)
@@ -118,18 +114,6 @@ for filename in os.listdir(input_directory):
         image_array = image_processing_function(input_directory, filename)
         i = 0
         for batch in datagen_bright.flow(image_array, batch_size = 1, save_to_dir = output_directory, save_prefix = 'mcsheep1bright', save_format = 'jpg'):
-                i += 1
-                if i == 5:
-                        break
-
-input_directory = "C:/University/Year 3 project/Project files/sheep_face_dataset_copy/mcsheep1" 
-output_directory = "C:/University/Year 3 project/Project files/sheep_face_dataset_copy/mcsheep1"
-
-for filename in os.listdir(input_directory):
-        # processing image into array
-        image_array = image_processing_function(input_directory, filename)
-        i = 0
-        for batch in datagen_shear.flow(image_array, batch_size = 1, save_to_dir = output_directory, save_prefix = 'mcsheep1shear', save_format = 'jpg'):
                 i += 1
                 if i == 5:
                         break
