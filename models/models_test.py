@@ -43,3 +43,4 @@ with torch.no_grad():
 
     test_accuracy = correct_test_classifications.float() / len(test_dataset)
     print('Test accuracy:', test_accuracy.item() * 100, '%')
+

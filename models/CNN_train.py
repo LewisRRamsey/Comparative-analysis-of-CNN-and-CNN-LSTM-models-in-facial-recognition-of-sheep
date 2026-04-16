@@ -8,6 +8,7 @@ from torch.optim.lr_scheduler import StepLR
 import time
 import torchvision
 import visualtorch
+import matplotlib.pyplot as plt
 
 # defining the path to the dataset
 dataset_train_path = "sheep_face_working_dataset/train"
@@ -23,7 +24,8 @@ dataset_transform = transforms.Compose([
 train_dataset =datasets.ImageFolder(root = dataset_train_path, transform = dataset_transform)
 
 # creating a dataloader for the train set of images
-train_loader = DataLoader(train_dataset, batch_size = 32, shuffle = True, num_workers = 4)
+def set_train_loader(batch_size):
+    return DataLoader(train_dataset, batch_size = batch_size, shuffle = True, num_workers = 4)
 
 # creating model class
 class SheepFaceClassifier(nn.Module):
@@ -34,29 +36,35 @@ class SheepFaceClassifier(nn.Module):
         self.pretrained_model = torchvision.models.resnet50(weights=torchvision.models.ResNet50_Weights.IMAGENET1K_V2)
         # changing the number of output features in the fully connected layer to 100, as there are 100 classes in the dataset
         self.pretrained_model.fc = nn.Linear(in_features=2048, out_features=100, bias=True)
-        self.new_layers = [self.pretrained_model.layer4, self.pretrained_model.fc]
 
     def forward(self, x):
         # passing the input through the ResNet50 model
         return self.pretrained_model(x)
     
     def fine_tune(self):
-        # initially freezing all the layers in the pretrained model
-        for parameters in self.pretrained_model.parameters():
+        # freezing layers 1 and 2 in the pretrained model
+        for parameters in self.pretrained_model.layer1.parameters():
             parameters.requires_grad = False
-        # unfreezing the layers specified to have weights trained
-        for layer in self.new_layers:   
-            for parameters in layer.parameters():
-                parameters.requires_grad = True
+        for parameters in self.pretrained_model.layer2.parameters():
+            parameters.requires_grad = False
+        for parameters in self.pretrained_model.layer3.parameters():
+            parameters.requires_grad = False
+        for parameters in self.pretrained_model.layer4.parameters():
+            parameters.requires_grad = True
+        for parameters in self.pretrained_model.fc.parameters():
+            parameters.requires_grad = True
+        
 
     def train(self, epochs, train_loader):
         # defining the loss function and the optimiser
         loss_criterion = nn.CrossEntropyLoss()
-        optimiser = torch.optim.Adam(self.parameters(), lr = 0.001)
+        optimiser = torch.optim.Adam(self.parameters(), lr = 0.005)
         scheduler = StepLR(optimiser, step_size = 5, gamma = 0.1)
-        running_loss = 0.0
-        number_of_batches = 0
+        accuracies = []
         for epoch in range(1, epochs + 1):
+            epoch_loss = 0.0
+            correct = 0
+            total = 0
             for inputs, labels in train_loader:
                 # zeroing the gradients of the optimiser
                 optimiser.zero_grad()
@@ -64,26 +72,83 @@ class SheepFaceClassifier(nn.Module):
                 outputs = self(inputs)
                 loss = loss_criterion(outputs, labels)
                 # backpropagating the loss and updating the weights
-                running_loss = running_loss + loss.item()
-                number_of_batches += 1
+                epoch_loss += loss.item() * labels.size(0)
                 loss.backward()
                 optimiser.step()
                 scheduler.step()
-            print(f"Epoch [{epoch}] Train Loss: {running_loss / number_of_batches}")
-        return running_loss / number_of_batches
-
-
-    
-# creating an instance of the model
-model = SheepFaceClassifier()
+                # calculating training accuracy
+                _, predicted = torch.max(outputs, 1)
+                correct += (predicted == labels).sum().item()
+                total += labels.size(0)
+            # returning loss and accuracy for epoch
+            accuracy = (correct / total) * 100
+            accuracies.append(accuracy)
+            print(f"Epoch [{epoch}] Train Loss: {epoch_loss / total}, Accuracy: {accuracy}")
+        # plotting graph of training accuracies
+        plt.plot(accuracies)
+        plt.xlabel('Epoch')
+        plt.ylabel('Accuracies')
+        plt.title('Training Accuracies')
+        plt.show()
+        return accuracies[-1]
+        
 
 # ensures training is only done when this script is run directly
 # prevents training from being done when this script is imported as a module, e.g for testing
 if __name__ == '__main__':
-    # model.train(epochs=10, train_loader=train_loader)
-    # torch.save(model.state_dict(), './CNN_facial_recognition_model.pth')
-    # print('Training is complete')
+    # setting train_loader for batch size of 6
+    train_loader = set_train_loader(batch_size = 16)
 
+    # creating an instance of the model for 40 epochs and batch size of 6
+    model_40 = SheepFaceClassifier()
+    # training the model with 40 epochs
+    model_40.fine_tune
+    final_accuracy_40_6 = model_40.train(epochs=5, train_loader=train_loader)
+    with open("Results_values.txt", "w") as file:
+        file.write(final_accuracy_40_6)
+    #torch.save(model_40.state_dict(), './CNN_facial_recognition_model_40_epochs_6_batch_size.pth')
+    print('Training is complete for 40 epochs model')
+'''
+    # creating an instance of the model for 50 epochs and batch size of 6
+    model_50 = SheepFaceClassifier()
+    # training the model with 50 epochs
+    model.train(epochs=50, train_loader=train_loader)
+    torch.save(model_50.state_dict(), './CNN_facial_recognition_model_50_epochs_6_batch_size.pth')
+    print('Training is complete for 50 epochs model')
+
+    # creating an instance of the model for 60 epochs and batch size of 6
+    model_60 = SheepFaceClassifier()
+    # training the model with 60 epochs
+    model.train(epochs=60, train_loader=train_loader)
+    torch.save(model_60.state_dict(), './CNN_facial_recognition_model_60_epochs_6_batch_size.pth')
+    print('Training is complete for 60 epochs model')
+
+    # setting train_loader for batch size of 16
+    train_loader = set_train_loader(batch_size = 16)
+
+    # creating an instance of the model for 40 epochs and batch size of 16
+    model_40 = SheepFaceClassifier()
+    # training the model with 40 epochs
+    model_40.train(epochs=5, train_loader=train_loader)
+    torch.save(model_40.state_dict(), './CNN_facial_recognition_model_40_epochs_16_batch_size.pth')
+    print('Training is complete for 40 epochs model')
+
+    # creating an instance of the model for 50 epochs and batch size of 16
+    model_50 = SheepFaceClassifier()
+    # training the model with 50 epochs
+    model.train(epochs=50, train_loader=train_loader)
+    torch.save(model_50.state_dict(), './CNN_facial_recognition_model_50_epochs_6_batch_size.pth')
+    print('Training is complete for 50 epochs model')
+
+    # creating an instance of the model for 60 epochs and batch size of 16
+    model_60 = SheepFaceClassifier()
+    # training the model with 60 epochs
+    model.train(epochs=60, train_loader=train_loader)
+    torch.save(model_60.state_dict(), './CNN_facial_recognition_model_60_epochs_6_batch_size.pth')
+    print('Training is complete for 60 epochs model')
+
+
+    # creating image of model structure
     vt = visualtorch.lenet_view(model = model, input_shape = (1, 3, 224, 224), to_file = "CNN_model_LeNet_view.png")
     print("LeNet view saved as CNN_model_LeNet_view.png")
-
+'''
