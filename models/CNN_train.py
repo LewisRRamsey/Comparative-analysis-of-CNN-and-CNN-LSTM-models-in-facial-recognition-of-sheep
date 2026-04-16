@@ -33,9 +33,9 @@ class SheepFaceClassifier(nn.Module):
     def __init__(self):
         super().__init__()
         # loading in ResNet50 model
-        self.pretrained_model = torchvision.models.resnet50(weights=torchvision.models.ResNet50_Weights.IMAGENET1K_V2)
+        self.pretrained_model = torchvision.models.resnet18(weights=torchvision.models.ResNet18_Weights.IMAGENET1K_V1)
         # changing the number of output features in the fully connected layer to 100, as there are 100 classes in the dataset
-        self.pretrained_model.fc = nn.Linear(in_features=2048, out_features=100, bias=True)
+        self.pretrained_model.fc = nn.Linear(in_features=512, out_features=100, bias=True)
         # freezing layers 1,2 and 3 in the pretrained model
         for parameters in self.pretrained_model.layer1.parameters():
             parameters.requires_grad = False
@@ -49,13 +49,13 @@ class SheepFaceClassifier(nn.Module):
             parameters.requires_grad = True
     
     def forward(self, x):
-        # passing the input through the ResNet50 model
+        # passing the input through the ResNet18 model
         return self.pretrained_model(x)               
 
-    def train(self, epochs, train_loader):
+    def train_model(self, epochs, train_loader):
         # defining the loss function and the optimiser
         loss_criterion = nn.CrossEntropyLoss()
-        optimiser = torch.optim.Adam(self.parameters(), lr = 0.01)
+        optimiser = torch.optim.Adam(self.parameters(), lr = 0.005)
         scheduler = StepLR(optimiser, step_size = 5, gamma = 0.1)
         accuracies = []
         for epoch in range(1, epochs + 1):
@@ -99,9 +99,9 @@ if __name__ == '__main__':
     # creating an instance of the model for 40 epochs and batch size of 6
     model_40 = SheepFaceClassifier()
     # training the model with 40 epochs
-    final_accuracy_40_6 = model_40.train(epochs=5, train_loader=train_loader)
+    final_accuracy_40_6 = model_40.train_model(epochs=5, train_loader=train_loader)
     with open("Results_values.txt", "w") as file:
-        file.write(final_accuracy_40_6)
+        file.write(str(final_accuracy_40_6))
     #torch.save(model_40.state_dict(), './CNN_facial_recognition_model_40_epochs_6_batch_size.pth')
     print('Training is complete for 40 epochs model')
 '''
