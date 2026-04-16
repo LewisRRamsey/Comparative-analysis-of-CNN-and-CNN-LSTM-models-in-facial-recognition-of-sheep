@@ -38,7 +38,7 @@ class SheepFaceClassifierCNNLSTM(nn.Module):
         self.pretrained_model.relu = nn.ReLU(inplace=True)
         self.pretrained_model.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1, dilation=1, ceil_mode=False)
         # defining the lstm layer
-        self.lstm = nn.LSTM(input_size=2048, hidden_size=200, num_layers=1, batch_first=True)
+        self.lstm = nn.LSTM(input_size=2048, hidden_size=200, num_layers=2, batch_first=True, bidirectional = True)
         # changing the number of output features in the fully connected layer to 100, as there are 100 classes in the dataset
         self.pretrained_model.fc = nn.Linear(in_features=200, out_features=100, bias=True)
         self.new_layers = [self.pretrained_model.layer4, self.pretrained_model.fc]
