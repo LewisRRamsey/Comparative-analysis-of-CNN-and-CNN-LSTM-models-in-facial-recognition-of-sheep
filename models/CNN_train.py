@@ -36,13 +36,7 @@ class SheepFaceClassifier(nn.Module):
         self.pretrained_model = torchvision.models.resnet50(weights=torchvision.models.ResNet50_Weights.IMAGENET1K_V2)
         # changing the number of output features in the fully connected layer to 100, as there are 100 classes in the dataset
         self.pretrained_model.fc = nn.Linear(in_features=2048, out_features=100, bias=True)
-
-    def forward(self, x):
-        # passing the input through the ResNet50 model
-        return self.pretrained_model(x)
-    
-    def fine_tune(self):
-        # freezing layers 1 and 2 in the pretrained model
+        # freezing layers 1,2 and 3 in the pretrained model
         for parameters in self.pretrained_model.layer1.parameters():
             parameters.requires_grad = False
         for parameters in self.pretrained_model.layer2.parameters():
@@ -53,12 +47,15 @@ class SheepFaceClassifier(nn.Module):
             parameters.requires_grad = True
         for parameters in self.pretrained_model.fc.parameters():
             parameters.requires_grad = True
-        
+    
+    def forward(self, x):
+        # passing the input through the ResNet50 model
+        return self.pretrained_model(x)               
 
     def train(self, epochs, train_loader):
         # defining the loss function and the optimiser
         loss_criterion = nn.CrossEntropyLoss()
-        optimiser = torch.optim.Adam(self.parameters(), lr = 0.005)
+        optimiser = torch.optim.Adam(self.parameters(), lr = 0.01)
         scheduler = StepLR(optimiser, step_size = 5, gamma = 0.1)
         accuracies = []
         for epoch in range(1, epochs + 1):
@@ -102,7 +99,6 @@ if __name__ == '__main__':
     # creating an instance of the model for 40 epochs and batch size of 6
     model_40 = SheepFaceClassifier()
     # training the model with 40 epochs
-    model_40.fine_tune
     final_accuracy_40_6 = model_40.train(epochs=5, train_loader=train_loader)
     with open("Results_values.txt", "w") as file:
         file.write(final_accuracy_40_6)
