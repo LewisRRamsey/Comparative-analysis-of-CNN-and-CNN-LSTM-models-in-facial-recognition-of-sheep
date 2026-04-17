@@ -1,3 +1,7 @@
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
+
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
@@ -55,8 +59,8 @@ class SheepFaceClassifier(nn.Module):
     def train_model(self, epochs, train_loader):
         # defining the loss function and the optimiser
         loss_criterion = nn.CrossEntropyLoss()
-        optimiser = torch.optim.Adam(self.parameters(), lr = 0.005)
-        scheduler = StepLR(optimiser, step_size = 5, gamma = 0.1)
+        optimiser = torch.optim.Adam(self.parameters(), lr = 0.001)
+        scheduler = StepLR(optimiser, step_size = 3, gamma = 0.1)
         accuracies = []
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.to(device)
@@ -80,18 +84,19 @@ class SheepFaceClassifier(nn.Module):
                 _, predicted = torch.max(outputs, 1)
                 correct += (predicted == labels).sum().item()
                 total += labels.size(0)
-            if epoch % 5 == 0:
+            if epoch % 3 == 0:
                 scheduler.step()
             # returning loss and accuracy for epoch
             accuracy = (correct / total) * 100
             accuracies.append(accuracy)
             print(f"Epoch [{epoch}] Train Loss: {epoch_loss / total}, Accuracy: {accuracy}%")
         # plotting graph of training accuracies
-        plt.plot(accuracies)
-        plt.xlabel('Epoch')
-        plt.ylabel('Accuracies')
-        plt.title('Training Accuracies for CNN model')
-        plt.show()
+        # plt.plot(accuracies)
+        # plt.xlabel('Epoch')
+        # plt.ylabel('Accuracies')
+        # plt.title('Training Accuracies for CNN model')
+        # plt.show()
+        # print("graph plotted")
         return accuracies[-1]
         
 
@@ -104,10 +109,10 @@ if __name__ == '__main__':
     # creating an instance of the model for 40 epochs and batch size of 6
     model_40 = SheepFaceClassifier()
     # training the model with 40 epochs
-    final_accuracy_50_6 = model_40.train_model(epochs=5, train_loader=train_loader)
+    final_accuracy_50_6 = model_40.train_model(epochs=3, train_loader=train_loader)
     with open("Results_values.txt", "w") as file:
         file.write(str(final_accuracy_50_6))
-    #torch.save(model_40.state_dict(), './CNN_facial_recognition_model_40_epochs_6_batch_size.pth')
+    torch.save(model_40.state_dict(), './CNN_facial_recognition_model_40_epochs_6_batch_size.pth')
     print('Training is complete for 40 epochs model')
 '''
     # creating an instance of the model for 50 epochs and batch size of 6
