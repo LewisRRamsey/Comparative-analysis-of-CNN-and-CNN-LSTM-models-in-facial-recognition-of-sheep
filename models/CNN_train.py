@@ -1,7 +1,6 @@
 import os
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
-
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
@@ -59,7 +58,7 @@ class SheepFaceClassifier(nn.Module):
     def train_model(self, epochs, train_loader):
         # defining the loss function and the optimiser
         loss_criterion = nn.CrossEntropyLoss()
-        optimiser = torch.optim.Adam(self.parameters(), lr = 0.001)
+        optimiser = torch.optim.Adam(self.parameters(), lr = 0.0001)
         scheduler = StepLR(optimiser, step_size = 3, gamma = 0.1)
         accuracies = []
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
