@@ -43,7 +43,7 @@ def validate_model(model):
 # Load the trained neural network model
 facial_recognition_model = train.SheepFaceClassifier()
 
-state_dict = torch.load('./CNN_facial_recognition_model_40_epochs_6_batch_size.pth', map_location='cpu')
+state_dict = torch.load('./CNN_facial_recognition_model_6_batch_size.pth', map_location='cpu')
 facial_recognition_model.load_state_dict(state_dict)
 facial_recognition_model.eval()
 

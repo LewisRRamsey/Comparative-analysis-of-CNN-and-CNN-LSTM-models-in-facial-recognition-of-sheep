@@ -10,6 +10,7 @@ import time
 import torchvision
 import visualtorch
 import matplotlib.pyplot as plt
+import numpy as np
 
 # defining the path to the dataset
 dataset_train_path = "sheep_face_working_dataset/train"
@@ -75,7 +76,7 @@ class SheepFaceClassifierCNNLSTM(nn.Module):
     def train_model(self, epochs, train_loader):
         # defining the loss function and the optimiser
         loss_criterion = nn.CrossEntropyLoss()
-        optimiser = torch.optim.Adam(self.parameters(), lr = 0.0001)
+        optimiser = torch.optim.Adam(self.parameters(), lr = 0.00001)
         scheduler = StepLR(optimiser, step_size = 5, gamma = 0.1)
         accuracies = []
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -106,13 +107,8 @@ class SheepFaceClassifierCNNLSTM(nn.Module):
             accuracy = (correct / total) * 100
             accuracies.append(accuracy)
             print(f'Epoch {epoch} - Loss: {epoch_loss / total}, Accuracy: {accuracy}%')
-        # plotting graph of training accuracies
-        plt.plot(accuracies)
-        plt.xlabel('Epoch')
-        plt.ylabel('Accuracies')
-        plt.title('Training Accuracies for CNN-LSTM model')
-        plt.show()
-        return accuracies[-1]
+        # returning array of accuracies
+        return accuracies
 
 
 # ensures training is only done when this script is run directly
@@ -122,39 +118,32 @@ if __name__ == '__main__':
     # setting train_loader for batch size of 6
     train_loader = set_train_loader(batch_size = 6)
 
-    # creating an instance of the model
-    model_50_6 = SheepFaceClassifierCNNLSTM()
-    # creating an instance of the model for 50 epochs and batch size of 6
-    final_accuracy_50_6 = model_50_6.train_model(epochs=5, train_loader=train_loader)
-    with open("Results_values.txt", "w") as file:
-        file.write(str(final_accuracy_50_6))
-    torch.save(model_50_6.state_dict(), './CNN_LSTM_facial_recognition_model_50_6.pth')
-    print('Training is complete for CNN-LSTM with 50 epochs and batch size of 6')
-'''
-        # creating an instance of the model for 60 epochs and batch size of 6
-    model_60 = SheepFaceClassifierCNNLSTM()
-    # training the model with 60 epochs
-    model.train(epochs=60, train_loader=train_loader)
-    torch.save(model_60.state_dict(), './CNN_LSTM_facial_recognition_model_60_6.pth')
-    print('Training is complete for CNN-LSTM with 60 epochs and batch size of 6')
 
+    # creating an instance of the model
+    model_6 = SheepFaceClassifierCNNLSTM()
+
+    # training the model
+    accuracies_6 = model_6.train_model(epochs=20, train_loader=train_loader)
+    # saving array of accuracies as a numpy file
+    np.save('CNN_LSTM_model_6_train_accuracies.npy', accuracies_6)
+
+    # saving the models weights and biases 
+    torch.save(model_6.state_dict(), './CNN_LSTM_facial_recognition_model_batch_size_6.pth')
+    print('Training is complete for CNN-LSTM with a batch size of 6')
+
+'''
     # setting train_loader for batch size of 16
     train_loader = set_train_loader(batch_size = 16)
 
-    # creating an instance of the model for 50 epochs and batch size of 16
-    model_50 = SheepFaceClassifierCNNLSTM()
-    # training the model with 50 epochs
-    model.train(epochs=50, train_loader=train_loader)
-    torch.save(model_50.state_dict(), './CNN_LSTM_facial_recognition_model_50_16.pth')
-    print('Training is complete for CNN-LSTM with 50 epochs and batch size of 16')
+    # creating an instance of the model
+    model_16 = SheepFaceClassifierCNNLSTM()
 
-    # creating an instance of the model for 60 epochs and batch size of 16
-    model_60 = SheepFaceClassifierCNNLSTM()
-    # training the model with 60 epochs
-    model.train(epochs=60, train_loader=train_loader)
-    torch.save(model_60.state_dict(), './CNN_LSTM_facial_recognition_model_60_16.pth')
-    print('Training is complete for CNN-LSTM with 60 epochs and batch size of 16')
+    # training the model
+    accuracies_16 = model_16.train_model(epochs=50, train_loader=train_loader)
+    # saving the accuracies as a numpy file
+    np.save('CNN_LSTM_model_16_train_accuracies.npy', accuracies_16)
+
+    # saving the models weights and biases
+    torch.save(model_16.state_dict(), './CNN_LSTM_facial_recognition_model_batch_size_16.pth')
+    print('Training is complete for CNN-LSTM with batch size of 16')
 '''
-    # creating image of model structure
-    # vt = visualtorch.lenet_view(model = model, input_shape = (1, 3, 224, 224), to_file = "CNNLSTM_model_LeNet_view.png")
-    # print("LeNet view saved as CNNLSTM_model_LeNet_view.png")
