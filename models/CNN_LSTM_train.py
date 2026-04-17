@@ -1,3 +1,4 @@
+from torch import device
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
@@ -21,7 +22,7 @@ dataset_transform = transforms.Compose([
 ])
 
 # loading in the training dataset
-train_dataset =datasets.ImageFolder(root = dataset_train_path, transform = dataset_transform)
+train_dataset = datasets.ImageFolder(root = dataset_train_path, transform = dataset_transform)
 
 # creating a dataloader for the train set of images
 def set_train_loader(batch_size):
@@ -43,7 +44,7 @@ class SheepFaceClassifierCNNLSTM(nn.Module):
         self.lstm = nn.LSTM(input_size=512, hidden_size=200, num_layers=2, batch_first=True, bidirectional = True)
         # changing the number of output features in the fully connected layer to 100, as there are 100 classes in the dataset
         self.pretrained_model.fc = nn.Linear(in_features=400, out_features=100, bias=True)
-        self.new_layers = [self.pretrained_model.layer4, self.pretrained_model.fc]
+        # freezing layers 1,2 and 3 in the pretrained model
         for parameters in self.pretrained_model.layer1.parameters():
             parameters.requires_grad = False
         for parameters in self.pretrained_model.layer2.parameters():
@@ -77,11 +78,15 @@ class SheepFaceClassifierCNNLSTM(nn.Module):
         optimiser = torch.optim.Adam(self.parameters(), lr = 0.001)
         scheduler = StepLR(optimiser, step_size = 5, gamma = 0.1)
         accuracies = []
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.to(device)
         for epoch in range(1, epochs + 1):
             epoch_loss = 0.0
             correct = 0
             total = 0
             for inputs, labels in train_loader:
+                inputs = inputs.to(device)
+                labels = labels.to(device)
                 # zeroing the gradients of the optimiser
                 optimiser.zero_grad()
                 # passing the inputs through the model to get the outputs
@@ -91,11 +96,13 @@ class SheepFaceClassifierCNNLSTM(nn.Module):
                 epoch_loss += loss.item() * labels.size(0)
                 loss.backward()
                 optimiser.step()
-                scheduler.step()
                 # calculating training accuracy
                 _, predicted = torch.max(outputs, 1)
                 correct += (predicted == labels).sum().item()
                 total += labels.size(0)
+            if epoch % 5 == 0:
+                scheduler.step()
+            # returning loss and accuracy for epoch
             accuracy = (correct / total) * 100
             accuracies.append(accuracy)
             print(f'Epoch {epoch} - Loss: {epoch_loss / total}, Accuracy: {accuracy}%')

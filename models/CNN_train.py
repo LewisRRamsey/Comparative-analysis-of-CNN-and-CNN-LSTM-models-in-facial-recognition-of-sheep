@@ -58,11 +58,15 @@ class SheepFaceClassifier(nn.Module):
         optimiser = torch.optim.Adam(self.parameters(), lr = 0.005)
         scheduler = StepLR(optimiser, step_size = 5, gamma = 0.1)
         accuracies = []
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.to(device)
         for epoch in range(1, epochs + 1):
             epoch_loss = 0.0
             correct = 0
             total = 0
             for inputs, labels in train_loader:
+                inputs = inputs.to(device)
+                labels = labels.to(device)
                 # zeroing the gradients of the optimiser
                 optimiser.zero_grad()
                 # passing the inputs through the model to get the outputs
@@ -72,11 +76,12 @@ class SheepFaceClassifier(nn.Module):
                 epoch_loss += loss.item() * labels.size(0)
                 loss.backward()
                 optimiser.step()
-                scheduler.step()
                 # calculating training accuracy
                 _, predicted = torch.max(outputs, 1)
                 correct += (predicted == labels).sum().item()
                 total += labels.size(0)
+            if epoch % 5 == 0:
+                scheduler.step()
             # returning loss and accuracy for epoch
             accuracy = (correct / total) * 100
             accuracies.append(accuracy)
