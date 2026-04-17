@@ -31,7 +31,7 @@ class SheepFaceClassifierCNNLSTM(nn.Module):
     def __init__(self):
         super().__init__()
         # loading in ResNet50 model
-        self.pretrained_model = torchvision.models.resnet50(weights=torchvision.models.ResNet50_Weights.IMAGENET1K_V2)
+        self.pretrained_model = torchvision.models.resnet18(weights=torchvision.models.ResNet18_Weights.IMAGENET1K_V1)
         print(self.pretrained_model)
         # defining initial layer to be the same as the ResNet50 model, as the input images are 3 channel RGB images
         self.pretrained_model.conv1 = nn.Conv2d(in_channels=3, out_channels=64, kernel_size=7, stride=2, padding=3, bias=False)
@@ -43,6 +43,16 @@ class SheepFaceClassifierCNNLSTM(nn.Module):
         # changing the number of output features in the fully connected layer to 100, as there are 100 classes in the dataset
         self.pretrained_model.fc = nn.Linear(in_features=400, out_features=100, bias=True)
         self.new_layers = [self.pretrained_model.layer4, self.pretrained_model.fc]
+        for parameters in self.pretrained_model.layer1.parameters():
+            parameters.requires_grad = False
+        for parameters in self.pretrained_model.layer2.parameters():
+            parameters.requires_grad = False
+        for parameters in self.pretrained_model.layer3.parameters():
+            parameters.requires_grad = False
+        for parameters in self.pretrained_model.layer4.parameters():
+            parameters.requires_grad = True
+        for parameters in self.pretrained_model.fc.parameters():
+            parameters.requires_grad = True
 
     def forward(self, x):
         # passing the input through the ResNet50 model
@@ -59,23 +69,17 @@ class SheepFaceClassifierCNNLSTM(nn.Module):
         y, (h_n, c_n) = self.lstm(y)
         return self.pretrained_model.fc(y[:, -1, :])
 
-    def fine_tune(self):
-        # initially freezing all the layers in the pretrained model
-        for parameters in self.pretrained_model.parameters():
-            parameters.requires_grad = False
-        # unfreezing the layers specified to have weights trained
-        for layer in self.new_layers:   
-            for parameters in layer.parameters():
-                parameters.requires_grad = True
 
-    def train(self, epochs, train_loader):
+    def train_model(self, epochs, train_loader):
         # defining the loss function and the optimiser
         loss_criterion = nn.CrossEntropyLoss()
         optimiser = torch.optim.Adam(self.parameters(), lr = 0.001)
         scheduler = StepLR(optimiser, step_size = 5, gamma = 0.1)
-        running_loss = 0.0
-        number_of_batches = 0
+        accuracies = []
         for epoch in range(1, epochs + 1):
+            epoch_loss = 0.0
+            correct = 0
+            total = 0
             for inputs, labels in train_loader:
                 # zeroing the gradients of the optimiser
                 optimiser.zero_grad()
@@ -88,9 +92,14 @@ class SheepFaceClassifierCNNLSTM(nn.Module):
                 loss.backward()
                 optimiser.step()
                 scheduler.step()
-                print("Batch Train Loss: ", loss.item())
-            print(f"Epoch [{epoch}] Train Loss: {running_loss / number_of_batches}")
-        return running_loss / number_of_batches
+                # calculating training accuracy
+                _, predicted = torch.max(outputs, 1)
+                correct += (predicted == labels).sum().item()
+                total += labels.size(0)
+            accuracy = (correct / total) * 100
+            accuracies.append(accuracy)
+            print(f'Epoch {epoch} - Loss: {running_loss / total}, Accuracy: {accuracy}%')
+        return accuracies[-1]
 
 
     

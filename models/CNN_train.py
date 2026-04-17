@@ -80,7 +80,7 @@ class SheepFaceClassifier(nn.Module):
             # returning loss and accuracy for epoch
             accuracy = (correct / total) * 100
             accuracies.append(accuracy)
-            print(f"Epoch [{epoch}] Train Loss: {epoch_loss / total}, Accuracy: {accuracy}")
+            print(f"Epoch [{epoch}] Train Loss: {epoch_loss / total}, Accuracy: {accuracy}%")
         # plotting graph of training accuracies
         plt.plot(accuracies)
         plt.xlabel('Epoch')
