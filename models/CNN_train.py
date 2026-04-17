@@ -85,7 +85,7 @@ class SheepFaceClassifier(nn.Module):
         plt.plot(accuracies)
         plt.xlabel('Epoch')
         plt.ylabel('Accuracies')
-        plt.title('Training Accuracies')
+        plt.title('Training Accuracies for CNN model')
         plt.show()
         return accuracies[-1]
         
@@ -99,9 +99,9 @@ if __name__ == '__main__':
     # creating an instance of the model for 40 epochs and batch size of 6
     model_40 = SheepFaceClassifier()
     # training the model with 40 epochs
-    final_accuracy_40_6 = model_40.train_model(epochs=5, train_loader=train_loader)
+    final_accuracy_50_6 = model_40.train_model(epochs=5, train_loader=train_loader)
     with open("Results_values.txt", "w") as file:
-        file.write(str(final_accuracy_40_6))
+        file.write(str(final_accuracy_50_6))
     #torch.save(model_40.state_dict(), './CNN_facial_recognition_model_40_epochs_6_batch_size.pth')
     print('Training is complete for 40 epochs model')
 '''
@@ -122,13 +122,6 @@ if __name__ == '__main__':
     # setting train_loader for batch size of 16
     train_loader = set_train_loader(batch_size = 16)
 
-    # creating an instance of the model for 40 epochs and batch size of 16
-    model_40 = SheepFaceClassifier()
-    # training the model with 40 epochs
-    model_40.train(epochs=5, train_loader=train_loader)
-    torch.save(model_40.state_dict(), './CNN_facial_recognition_model_40_epochs_16_batch_size.pth')
-    print('Training is complete for 40 epochs model')
-
     # creating an instance of the model for 50 epochs and batch size of 16
     model_50 = SheepFaceClassifier()
     # training the model with 50 epochs
@@ -142,9 +135,7 @@ if __name__ == '__main__':
     model.train(epochs=60, train_loader=train_loader)
     torch.save(model_60.state_dict(), './CNN_facial_recognition_model_60_epochs_6_batch_size.pth')
     print('Training is complete for 60 epochs model')
-
-
-    # creating image of model structure
-    vt = visualtorch.lenet_view(model = model, input_shape = (1, 3, 224, 224), to_file = "CNN_model_LeNet_view.png")
-    print("LeNet view saved as CNN_model_LeNet_view.png")
 '''
+    # creating image of model structure
+    #vt = visualtorch.lenet_view(model = model, input_shape = (1, 3, 224, 224), to_file = "CNN_model_LeNet_view.png")
+    #print("LeNet view saved as CNN_model_LeNet_view.png")
