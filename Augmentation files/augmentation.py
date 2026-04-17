@@ -24,10 +24,12 @@ datagen_noise = ImageDataGenerator(
 # main augmentation process for all previously generated images including suitable rotation, brightness adjustment and shearing (orientation change simulation)
 datagen_main = ImageDataGenerator(
         rotation_range = 30,
-        brightness_range = (0.7, 1.3),
-        zoom_range = 0.1,
-        width_shift_range = 0.1,
-        height_shift_range = 0.1)
+        brightness_range = (0.25, 1.75),
+        shear_range = 0.2,
+        zoom_range = 0.15,
+        width_shift_range = 0.15,
+        height_shift_range = 0.15,
+)
 
 def image_processing_function(input_directory, filename):
         image_path = os.path.join(input_directory, filename)
