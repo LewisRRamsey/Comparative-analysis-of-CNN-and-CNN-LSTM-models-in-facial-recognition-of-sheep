@@ -11,6 +11,7 @@ import torchvision
 import visualtorch
 import matplotlib.pyplot as plt
 import numpy as np
+import tracemalloc
 
 # defining the path to the dataset
 dataset_train_path = "sheep_face_working_dataset/train"
@@ -76,7 +77,7 @@ class SheepFaceClassifierCNNLSTM(nn.Module):
     def train_model(self, epochs, train_loader):
         # defining the loss function and the optimiser
         loss_criterion = nn.CrossEntropyLoss()
-        optimiser = torch.optim.Adam(self.parameters(), lr = 0.00001)
+        optimiser = torch.optim.Adam(self.parameters(), lr = 0.000005)
         scheduler = StepLR(optimiser, step_size = 5, gamma = 0.1)
         accuracies = []
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -118,32 +119,50 @@ if __name__ == '__main__':
     # setting train_loader for batch size of 6
     train_loader = set_train_loader(batch_size = 6)
 
-
-    # creating an instance of the model
+    # creating an instance of the model with batch size of 6
     model_6 = SheepFaceClassifierCNNLSTM()
-
-    # training the model
-    accuracies_6 = model_6.train_model(epochs=20, train_loader=train_loader)
-    # saving array of accuracies as a numpy file
+    # training the model and measuring time and memory usage
+    tracemalloc.start()
+    start_time = time.perf_counter()
+    accuracies_6 = model_6.train(epochs=60, train_loader=train_loader)
+    end_time = time.perf_counter()
+    current_mem_usage, peak_mem_usage = tracemalloc.get_traced_memory()
+    elapsed_time_mins = (end_time - start_time) / 60
+    peak_mem_usage_MB = peak_mem_usage / (1024 ** 2)
+    # converitng elapsed time and peak memory usage to numpy arrays
+    train_time_array = np.array([elapsed_time_mins], dtype = float)
+    memory_usage_array = np.array([peak_mem_usage_MB], dtype = float)
+    # saving accuracies, train time and memory usage to numpy files
     np.save('CNN_LSTM_model_6_train_accuracies.npy', accuracies_6)
+    np.save('CNN_LSTM_model_6_peak_mem_usage.npy', memory_usage_array)
+    np.save('CNN_LSTM_model_6_train_time.npy', train_time_array)
 
     # saving the models weights and biases 
     torch.save(model_6.state_dict(), './CNN_LSTM_facial_recognition_model_batch_size_6.pth')
     print('Training is complete for CNN-LSTM with a batch size of 6')
 
-'''
+
     # setting train_loader for batch size of 16
     train_loader = set_train_loader(batch_size = 16)
 
-    # creating an instance of the model
+    # creating an instance of the model with batch size of 16
     model_16 = SheepFaceClassifierCNNLSTM()
-
-    # training the model
-    accuracies_16 = model_16.train_model(epochs=50, train_loader=train_loader)
-    # saving the accuracies as a numpy file
+    # training the model and measuring time and memory usage
+    tracemalloc.start()
+    start_time = time.perf_counter()
+    accuracies_16 = model_16.train(epochs=60, train_loader=train_loader)
+    end_time = time.perf_counter()
+    current_mem_usage, peak_mem_usage = tracemalloc.get_traced_memory()
+    elapsed_time_mins = (end_time - start_time) / 60
+    peak_mem_usage_MB = peak_mem_usage / (1024 ** 2)
+    # converitng elapsed time and peak memory usage to numpy arrays
+    train_time_array = np.array([elapsed_time_mins], dtype = float)
+    memory_usage_array = np.array([peak_mem_usage_MB], dtype = float)
+    # saving accuracies, train time and memory usage to numpy files
     np.save('CNN_LSTM_model_16_train_accuracies.npy', accuracies_16)
+    np.save('CNN_LSTM_model_16_peak_mem_usage.npy', memory_usage_array)
+    np.save('CNN_LSTM_model_16_train_time.npy', train_time_array)
 
     # saving the models weights and biases
     torch.save(model_16.state_dict(), './CNN_LSTM_facial_recognition_model_batch_size_16.pth')
     print('Training is complete for CNN-LSTM with batch size of 16')
-'''
