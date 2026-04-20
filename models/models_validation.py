@@ -45,7 +45,7 @@ def validate_model(model):
     
 # Load the trained neural network model
 facial_recognition_model = train.SheepFaceClassifier()
-'''
+
 # validation accuracy calculation for CNN model used with batch size 6
 state_dict = torch.load('./CNN_facial_recognition_model_6_batch_size.pth', map_location='cpu')
 facial_recognition_model.load_state_dict(state_dict)
@@ -72,9 +72,6 @@ facial_recognition_model.eval()
 
 validation_accuracy_CNN_LSTM_6_array = validate_model(facial_recognition_model)
 np.save('CNN_LSTM_6_validation_accuracy.npy', validation_accuracy_CNN_LSTM_6_array)
-'''
-
-facial_recognition_model = train_lstm.SheepFaceClassifierCNNLSTM()
 
 # validation accuracy calculation for CNN LSTM model used with batch size 16
 state_dict = torch.load('./CNN_LSTM_facial_recognition_model_batch_size_16.pth', map_location='cpu')

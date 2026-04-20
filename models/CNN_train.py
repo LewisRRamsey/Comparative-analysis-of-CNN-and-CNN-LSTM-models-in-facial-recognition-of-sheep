@@ -92,7 +92,7 @@ class SheepFaceClassifier(nn.Module):
 # ensures training is only done when this script is run directly
 # prevents training from being done when this script is imported as a module, e.g for testing
 if __name__ == '__main__':
-    '''
+
     # setting train_loader for batch size of 6
     train_loader = set_train_loader(batch_size = 16)
 
@@ -117,7 +117,7 @@ if __name__ == '__main__':
     # saving models weights and biases
     torch.save(model_6.state_dict(), './CNN_facial_recognition_model_6_batch_size.pth')
     print('Training is complete for batch size 6 model')
-    '''
+
 
     # setting train_loader for batch size of 16
     train_loader = set_train_loader(batch_size = 16)

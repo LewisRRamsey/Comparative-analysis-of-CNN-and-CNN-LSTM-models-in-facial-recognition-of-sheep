@@ -61,9 +61,8 @@ facial_recognition_model.eval()
 test_accuracy, test_precision, test_recall, test_f1 = test_model(facial_recognition_model)
 np.save('CNN_6_test_accuracy.npy', test_accuracy)
 np.save('CNN_6_test_precision.npy', test_precision)
-np.save('CNN_6_test_recall', test_recall)
-np.save('CNN_6_test_f1', test_f1)
-'''
+np.save('CNN_6_test_recall.npy', test_recall)
+np.save('CNN_6_test_f1.npy', test_f1)
 
 # calculating test accuracy, precision, recall and f1 score for CNN with batch size 16
 state_dict = torch.load('./CNN_facial_recognition_model_16_batch_size.pth', map_location='cpu')
@@ -72,9 +71,8 @@ facial_recognition_model.eval()
 test_accuracy, test_precision, test_recall, test_f1 = test_model(facial_recognition_model)
 np.save('CNN_16_test_accuracy.npy', test_accuracy)
 np.save('CNN_16_test_precision.npy', test_precision)
-np.save('CNN_16_test_recall', test_recall)
-np.save('CNN_16_test_f1', test_f1)
-
+np.save('CNN_16_test_recall.npy', test_recall)
+np.save('CNN_16_test_f1.npy', test_f1)
 
 # Load the trained neural network model
 facial_recognition_model = train_lstm.SheepFaceClassifierCNNLSTM()
@@ -86,8 +84,8 @@ facial_recognition_model.eval()
 test_accuracy, test_precision, test_recall, test_f1 = test_model(facial_recognition_model)
 np.save('CNN_LSTM_6_test_accuracy.npy', test_accuracy)
 np.save('CNN_LSTM_6_test_precision.npy', test_precision)
-np.save('CNN_LSTM_6_test_recall', test_recall)
-np.save('CNN_LSTM_6_test_f1', test_f1)
+np.save('CNN_LSTM_6_test_recall.npy', test_recall)
+np.save('CNN_LSTM_6_test_f1.npy', test_f1)
 
 # calculating test accuracy, precision, recall and f1 score for CNN-LSTM with batch size 16
 state_dict = torch.load('./CNN_LSTM_facial_recognition_model_16_batch_size.pth', map_location='cpu')
@@ -96,6 +94,5 @@ facial_recognition_model.eval()
 test_accuracy, test_precision, test_recall, test_f1 = test_model(facial_recognition_model)
 np.save('CNN_LSTM_16_test_accuracy.npy', test_accuracy)
 np.save('CNN_LSTM_16_test_precision.npy', test_precision)
-np.save('CNN_LSTM_16_test_recall', test_recall)
-np.save('CNN_LSTM_16_test_f1', test_f1)
-'''
+np.save('CNN_LSTM_16_test_recall.npy', test_recall)
+np.save('CNN_LSTM_16_test_f1.npy', test_f1)
