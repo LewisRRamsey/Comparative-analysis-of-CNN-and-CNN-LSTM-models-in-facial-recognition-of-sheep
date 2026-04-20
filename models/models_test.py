@@ -37,14 +37,12 @@ def test_model(facial_recognition_model):
 
             _, test_prediction_class = torch.max(test_outputs, 1)
 
-            correct_test_classifications += torch.sum(test_prediction_class == test_label.data)
-
             accuracy.update(test_prediction_class, test_label.data)
             precision.update(test_prediction_class, test_label.data)
             recall.update(test_prediction_class, test_label.data)
             f1.update(test_prediction_class, test_label.data)
 
-        test_acc_array = np.array([accuracy.comput().item()], dtype = float)
+        test_acc_array = np.array([accuracy.compute().item()], dtype = float)
         test_prec_array = np.array([precision.compute().item()], dtype = float)
         test_recall_array = np.array([recall.compute().item()], dtype = float)
         test_f1_array = np.array([f1.compute().item()], dtype = float)
@@ -78,7 +76,7 @@ np.save('CNN_16_test_f1.npy', test_f1)
 facial_recognition_model = train_lstm.SheepFaceClassifierCNNLSTM()
 
 # calculating test accuracy, precision, recall and f1 score for CNN-LSTM with batch size 6
-state_dict = torch.load('./CNN_LSTM_facial_recognition_model_6_batch_size.pth', map_location='cpu')
+state_dict = torch.load('./CNN_LSTM_facial_recognition_model_batch_size_6.pth', map_location='cpu')
 facial_recognition_model.load_state_dict(state_dict)
 facial_recognition_model.eval()
 test_accuracy, test_precision, test_recall, test_f1 = test_model(facial_recognition_model)
@@ -88,7 +86,7 @@ np.save('CNN_LSTM_6_test_recall.npy', test_recall)
 np.save('CNN_LSTM_6_test_f1.npy', test_f1)
 
 # calculating test accuracy, precision, recall and f1 score for CNN-LSTM with batch size 16
-state_dict = torch.load('./CNN_LSTM_facial_recognition_model_16_batch_size.pth', map_location='cpu')
+state_dict = torch.load('./CNN_LSTM_facial_recognition_model_batch_size_16.pth', map_location='cpu')
 facial_recognition_model.load_state_dict(state_dict)
 facial_recognition_model.eval()
 test_accuracy, test_precision, test_recall, test_f1 = test_model(facial_recognition_model)
