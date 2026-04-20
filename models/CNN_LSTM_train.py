@@ -31,19 +31,19 @@ def set_train_loader(batch_size):
 # creating model class
 class SheepFaceClassifierCNNLSTM(nn.Module):
     # defining model architecture
-    def __init__(self):
+    def __init__(self, batch_size):
         super().__init__()
+        self.batch_size = batch_size
         # loading in ResNet50 model
         self.pretrained_model = torchvision.models.resnet18(weights=torchvision.models.ResNet18_Weights.IMAGENET1K_V1)
-        # defining initial layer to be the same as the ResNet50 model, as the input images are 3 channel RGB images
-        self.pretrained_model.conv1 = nn.Conv2d(in_channels=3, out_channels=64, kernel_size=7, stride=2, padding=3, bias=False)
-        self.pretrained_model.bn1 = nn.BatchNorm2d(num_features=64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-        self.pretrained_model.relu = nn.ReLU(inplace=True)
-        self.pretrained_model.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1, dilation=1, ceil_mode=False)
+        # removing the fully connected layer from the pretrained model
+        self.pretrained_model.fc = nn.Identity()
+        # setting the ResNet18 feature size to 512, as the output from the ResNet18 model will be used as the input to the LSTM layer
+        self.feature_dim = 512
         # defining the lstm layer
         self.lstm = nn.LSTM(input_size=512, hidden_size=200, num_layers=2, batch_first=True, bidirectional = True)
-        # changing the number of output features in the fully connected layer to 100, as there are 100 classes in the dataset
-        self.pretrained_model.fc = nn.Linear(in_features=400, out_features=100, bias=True)
+        # creating classifier layer to get the output for 100 classes
+        self.classifier_layer = nn.Linear(in_features=200*2, out_features=100, bias=True)
         # freezing layers 1,2 and 3 in the pretrained model
         for parameters in self.pretrained_model.layer1.parameters():
             parameters.requires_grad = False
@@ -57,19 +57,12 @@ class SheepFaceClassifierCNNLSTM(nn.Module):
             parameters.requires_grad = True
 
     def forward(self, x):
-        # passing the input through the ResNet50 model
-        y = self.pretrained_model.conv1(x)
-        y = self.pretrained_model.bn1(y)
-        y = self.pretrained_model.relu(y)
-        y = self.pretrained_model.maxpool(y)
-        y = self.pretrained_model.layer1(y)
-        y = self.pretrained_model.layer2(y)
-        y = self.pretrained_model.layer3(y)
-        y = self.pretrained_model.layer4(y)
-        # reshaping the output of layer 4 to be compatible with the LSTM layer (3D tensor)
-        y = y.view(y.size(0), -1, 512)
-        y, (h_n, c_n) = self.lstm(y)
-        return self.pretrained_model.fc(y[:, -1, :])
+        features = self.pretrained_model(x)  # (batch*seq_len, 512)
+        features = features.view(self.batch_size, 1, 512)
+
+        y, _ = self.lstm(features)
+
+        return self.classifier_layer(y[:, -1, :])
 
 
     def training_model(self, epochs, train_loader):
@@ -118,7 +111,7 @@ if __name__ == '__main__':
     train_loader = set_train_loader(batch_size = 6)
 
     # creating an instance of the model with batch size of 6
-    model_6 = SheepFaceClassifierCNNLSTM()
+    model_6 = SheepFaceClassifierCNNLSTM(batch_size = 6)
     # training the model and measuring time and memory usage
     tracemalloc.start()
     start_time = time.perf_counter()
