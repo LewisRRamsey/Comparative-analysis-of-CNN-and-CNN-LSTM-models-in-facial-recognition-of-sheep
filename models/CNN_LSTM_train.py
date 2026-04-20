@@ -8,8 +8,6 @@ import torch.optim
 from torch.optim.lr_scheduler import StepLR
 import time
 import torchvision
-import visualtorch
-import matplotlib.pyplot as plt
 import numpy as np
 import tracemalloc
 
@@ -74,11 +72,11 @@ class SheepFaceClassifierCNNLSTM(nn.Module):
         return self.pretrained_model.fc(y[:, -1, :])
 
 
-    def train_model(self, epochs, train_loader):
+    def training_model(self, epochs, train_loader):
         # defining the loss function and the optimiser
         loss_criterion = nn.CrossEntropyLoss()
-        optimiser = torch.optim.Adam(self.parameters(), lr = 0.000005)
-        scheduler = StepLR(optimiser, step_size = 5, gamma = 0.1)
+        optimiser = torch.optim.Adam(self.parameters(), lr = 0.00001)
+        scheduler = StepLR(optimiser, step_size = 4, gamma = 0.2)
         accuracies = []
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.to(device)
@@ -102,7 +100,7 @@ class SheepFaceClassifierCNNLSTM(nn.Module):
                 _, predicted = torch.max(outputs, 1)
                 correct += (predicted == labels).sum().item()
                 total += labels.size(0)
-            if epoch % 5 == 0:
+            if epoch % 4 == 0:
                 scheduler.step()
             # returning loss and accuracy for epoch
             accuracy = (correct / total) * 100
@@ -115,7 +113,7 @@ class SheepFaceClassifierCNNLSTM(nn.Module):
 # ensures training is only done when this script is run directly
 # prevents training from being done when this script is imported as a module, e.g for testing
 if __name__ == '__main__':
-
+    '''
     # setting train_loader for batch size of 6
     train_loader = set_train_loader(batch_size = 6)
 
@@ -124,7 +122,7 @@ if __name__ == '__main__':
     # training the model and measuring time and memory usage
     tracemalloc.start()
     start_time = time.perf_counter()
-    accuracies_6 = model_6.train(epochs=60, train_loader=train_loader)
+    accuracies_6 = model_6.training_model(epochs = 25, train_loader = train_loader)
     end_time = time.perf_counter()
     current_mem_usage, peak_mem_usage = tracemalloc.get_traced_memory()
     elapsed_time_mins = (end_time - start_time) / 60
@@ -141,7 +139,7 @@ if __name__ == '__main__':
     torch.save(model_6.state_dict(), './CNN_LSTM_facial_recognition_model_batch_size_6.pth')
     print('Training is complete for CNN-LSTM with a batch size of 6')
 
-
+    '''
     # setting train_loader for batch size of 16
     train_loader = set_train_loader(batch_size = 16)
 
@@ -150,7 +148,7 @@ if __name__ == '__main__':
     # training the model and measuring time and memory usage
     tracemalloc.start()
     start_time = time.perf_counter()
-    accuracies_16 = model_16.train(epochs=60, train_loader=train_loader)
+    accuracies_16 = model_16.training_model(epochs = 25, train_loader = train_loader)
     end_time = time.perf_counter()
     current_mem_usage, peak_mem_usage = tracemalloc.get_traced_memory()
     elapsed_time_mins = (end_time - start_time) / 60
