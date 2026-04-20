@@ -41,10 +41,10 @@ plt.show()
 # creating a table to compare the validation accuracy, training time and training peak memory usage for the CNN and CNN-LSTM models with batch sizes of 6 and 16
 
 data = [
-    ["CNN (batch size 6)", f"{np.load('CNN_model_6_train_time.npy')[0]:.2f}", f"{np.load('CNN_model_6_peak_mem_usage.npy')[0]:.2f}", f"{np.load('CNN_6_validation_accuracy.npy')[0] * 100:.2f}"],
-    ["CNN (batch size 16)", f"{np.load('CNN_model_16_train_time.npy')[0]:.2f}", f"{np.load('CNN_model_16_peak_mem_usage.npy')[0]:.2f}", f"{np.load('CNN_16_validation_accuracy.npy')[0] * 100:.2f}"],
-    ["CNN-LSTM (batch size 6)", f"{np.load('CNN_LSTM_model_6_train_time.npy')[0]:.2f}", f"{np.load('CNN_LSTM_model_6_peak_mem_usage.npy')[0]:.2f}", f"{np.load('CNN_LSTM_6_validation_accuracy.npy')[0] * 100:.2f}"],
-    ["CNN-LSTM (batch size 16)", f"{np.load('CNN_LSTM_model_16_train_time.npy')[0]:.2f}", f"{np.load('CNN_LSTM_model_16_peak_mem_usage.npy')[0]:.2f}", f"{np.load('CNN_LSTM_16_validation_accuracy.npy')[0] * 100:.2f}"]
+    ["CNN (bs = 6)", f"{np.load('CNN_model_6_train_time.npy')[0]:.2f}", f"{np.load('CNN_model_6_peak_mem_usage.npy')[0]:.2f}", f"{np.load('CNN_6_validation_accuracy.npy')[0] * 100:.2f}"],
+    ["CNN (bs = 16)", f"{np.load('CNN_model_16_train_time.npy')[0]:.2f}", f"{np.load('CNN_model_16_peak_mem_usage.npy')[0]:.2f}", f"{np.load('CNN_16_validation_accuracy.npy')[0] * 100:.2f}"],
+    ["CNN-LSTM (bs = 6)", f"{np.load('CNN_LSTM_model_6_train_time.npy')[0]:.2f}", f"{np.load('CNN_LSTM_model_6_peak_mem_usage.npy')[0]:.2f}", f"{np.load('CNN_LSTM_6_validation_accuracy.npy')[0] * 100:.2f}"],
+    ["CNN-LSTM (bs = 16)", f"{np.load('CNN_LSTM_model_16_train_time.npy')[0]:.2f}", f"{np.load('CNN_LSTM_model_16_peak_mem_usage.npy')[0]:.2f}", f"{np.load('CNN_LSTM_16_validation_accuracy.npy')[0] * 100:.2f}"]
 ]
 
 columns = ["Model", "Training Time (minutes)", "Peak Memory Usage (MB)", "Validation Accuracy (%)"]
@@ -64,10 +64,10 @@ plt.show()
 
 # creating a table to compare the test accuracy, precision, recall and F1 score for the CNN and CNN-LSTM models with batch sizes of 6 and 16
 data = [
-    ["CNN (batch size 6)", f"{np.load('CNN_6_test_accuracy.npy')[0] * 100:.2f}", f"{np.load('CNN_6_test_precision.npy')[0]:.2f}", f"{np.load('CNN_6_test_recall.npy')[0]:.2f}", f"{np.load('CNN_6_test_f1.npy')[0]:.2f}"],
-    ["CNN (batch size 16)", f"{np.load('CNN_16_test_accuracy.npy')[0] * 100:.2f}", f"{np.load('CNN_16_test_precision.npy')[0]:.2f}", f"{np.load('CNN_16_test_recall.npy')[0]:.2f}", f"{np.load('CNN_16_test_f1.npy')[0]:.2f}"],
-    ["CNN-LSTM (batch size 6)", f"{np.load('CNN_LSTM_6_test_accuracy.npy')[0] * 100:.2f}", f"{np.load('CNN_LSTM_6_test_precision.npy')[0]:.2f}", f"{np.load('CNN_LSTM_6_test_recall.npy')[0]:.2f}", f"{np.load('CNN_LSTM_6_test_f1.npy')[0]:.2f}"],
-    ["CNN-LSTM (batch size 16)", f"{np.load('CNN_LSTM_16_test_accuracy.npy')[0] * 100:.2f}", f"{np.load('CNN_LSTM_16_test_precision.npy')[0]:.2f}", f"{np.load('CNN_LSTM_16_test_recall.npy')[0]:.2f}", f"{np.load('CNN_LSTM_16_test_f1.npy')[0]:.2f}"]
+    ["CNN (bs = 6)", f"{np.load('CNN_6_test_accuracy.npy')[0] * 100:.2f}", f"{np.load('CNN_6_test_precision.npy')[0]:.2f}", f"{np.load('CNN_6_test_recall.npy')[0]:.2f}", f"{np.load('CNN_6_test_f1.npy')[0]:.2f}"],
+    ["CNN (bs = 16)", f"{np.load('CNN_16_test_accuracy.npy')[0] * 100:.2f}", f"{np.load('CNN_16_test_precision.npy')[0]:.2f}", f"{np.load('CNN_16_test_recall.npy')[0]:.2f}", f"{np.load('CNN_16_test_f1.npy')[0]:.2f}"],
+    ["CNN-LSTM (bs = 6)", f"{np.load('CNN_LSTM_6_test_accuracy.npy')[0] * 100:.2f}", f"{np.load('CNN_LSTM_6_test_precision.npy')[0]:.2f}", f"{np.load('CNN_LSTM_6_test_recall.npy')[0]:.2f}", f"{np.load('CNN_LSTM_6_test_f1.npy')[0]:.2f}"],
+    ["CNN-LSTM (bs = 16)", f"{np.load('CNN_LSTM_16_test_accuracy.npy')[0] * 100:.2f}", f"{np.load('CNN_LSTM_16_test_precision.npy')[0]:.2f}", f"{np.load('CNN_LSTM_16_test_recall.npy')[0]:.2f}", f"{np.load('CNN_LSTM_16_test_f1.npy')[0]:.2f}"]
 ]
 
 columns = ["Model", "Test Accuracy (%)", "Test Precision (%)", "Test Recall (%)", "Test F1 Score (%)"]
