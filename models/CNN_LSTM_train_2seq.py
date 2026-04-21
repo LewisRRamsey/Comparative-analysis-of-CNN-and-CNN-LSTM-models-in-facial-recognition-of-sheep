@@ -32,6 +32,7 @@ class SequenceDataset(Dataset):
         for class_name in classes:
             class_path = os.path.join(root, class_name)
 
+            # iterating through the sequences in each class and adding the path to the sequence and its corresponding label to the samples list
             for sequence_name in os.listdir(class_path):
                 sequence_path = os.path.join(class_path, sequence_name)
                 if os.path.isdir(sequence_path):
@@ -46,7 +47,7 @@ class SequenceDataset(Dataset):
             sequence_path, label = self.samples[index]
 
             # Load the two images in sorted order for the LSTM to be able to learn from the sequence of images
-            image_files = sorted(os.listdir(sequence_path))
+            image_files = [file for file in sorted(os.listdir(sequence_path)) if file.lower().endswith((".jpg"))]
             images = []
 
             for image_name in image_files:
@@ -129,7 +130,7 @@ class SheepFaceClassifierCNNLSTM(nn.Module):
     def training_model(self, epochs, train_loader):
         # defining the loss function and the optimiser
         loss_criterion = nn.CrossEntropyLoss()
-        optimiser = torch.optim.Adam(self.parameters(), lr = 0.00001)
+        optimiser = torch.optim.Adam(self.parameters(), lr = 0.0001)
         scheduler = StepLR(optimiser, step_size = 4, gamma = 0.2)
         accuracies = []
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -138,6 +139,7 @@ class SheepFaceClassifierCNNLSTM(nn.Module):
             epoch_loss = 0.0
             correct = 0
             total = 0
+            self.train()
             for inputs, labels in train_loader:
                 inputs = inputs.to(device)
                 labels = labels.to(device)
@@ -154,9 +156,12 @@ class SheepFaceClassifierCNNLSTM(nn.Module):
                 _, predicted = torch.max(outputs, 1)
                 correct += (predicted == labels).sum().item()
                 total += labels.size(0)
+
+            # every 4 epochs reducing learning rate
             if epoch % 4 == 0:
                 scheduler.step()
-            # returning loss and accuracy for epoch
+
+            # returning training loss and accuracy for epoch
             accuracy = (correct / total) * 100
             accuracies.append(accuracy)
             print(f'Epoch {epoch} - Loss: {epoch_loss / total}, Accuracy: {accuracy}%')
@@ -179,6 +184,7 @@ if __name__ == '__main__':
     accuracies_6 = model_6.training_model(epochs = 25, train_loader = train_loader)
     end_time = time.perf_counter()
     current_mem_usage, peak_mem_usage = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
     elapsed_time_mins = (end_time - start_time) / 60
     peak_mem_usage_MB = peak_mem_usage / (1024 ** 2)
     # converitng elapsed time and peak memory usage to numpy arrays
@@ -205,6 +211,7 @@ if __name__ == '__main__':
     accuracies_16 = model_16.training_model(epochs = 25, train_loader = train_loader)
     end_time = time.perf_counter()
     current_mem_usage, peak_mem_usage = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
     elapsed_time_mins = (end_time - start_time) / 60
     peak_mem_usage_MB = peak_mem_usage / (1024 ** 2)
     # converitng elapsed time and peak memory usage to numpy arrays

@@ -3,7 +3,7 @@ import shutil
 import random
 
 # function for moving dataset files from their original folder to one in either train, validation or test folders, keeping them in their respective class folders
-def file_moving_function(source_folder, destination_folders, probabilities = [0.7, 0.2, 0.1]):
+def file_moving_function(source_folder, destination_folders, probabilities = [0.6, 0.1, 0.3]):
     # creating destination folders if they do not already exist
     for folder in destination_folders:
         os.makedirs(folder, exist_ok=True)

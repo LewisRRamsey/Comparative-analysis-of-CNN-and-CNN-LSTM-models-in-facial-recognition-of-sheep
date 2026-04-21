@@ -16,7 +16,7 @@ from PIL import Image
 dataset_train_path = "Mini_test_dataset"
 
 class SequenceDataset(Dataset):
-    def __init__(self, root, transform=None):
+    def __init__(self, root, transform = None):
         self.root = root
         self.transform = transform
         self.samples = []
@@ -45,7 +45,7 @@ class SequenceDataset(Dataset):
             sequence_path, label = self.samples[index]
 
             # Load the two images in sorted order for the LSTM to be able to learn from the sequence of images
-            image_files = sorted(os.listdir(sequence_path))
+            image_files = [file for file in sorted(os.listdir(sequence_path)) if file.lower().endswith((".jpg"))]
             images = []
 
             for image_name in image_files:
@@ -113,7 +113,7 @@ class SheepFaceClassifier(nn.Module):
     def training_model(self, epochs, train_loader):
         # defining the loss function and the optimiser
         loss_criterion = nn.CrossEntropyLoss()
-        optimiser = torch.optim.Adam(self.parameters(), lr = 0.00001)
+        optimiser = torch.optim.Adam(self.parameters(), lr = 0.0001)
         scheduler = StepLR(optimiser, step_size = 4, gamma = 0.2)
         accuracies = []
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -122,6 +122,7 @@ class SheepFaceClassifier(nn.Module):
             epoch_loss = 0.0
             correct = 0
             total = 0
+            self.train()
             for inputs, labels in train_loader:
                 inputs = inputs.to(device)
                 labels = labels.to(device)
@@ -162,6 +163,7 @@ if __name__ == '__main__':
     accuracies_6 = model_6.training_model(epochs = 15, train_loader = train_loader)
     end_time = time.perf_counter()
     current_mem_usage, peak_mem_usage = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
     elapsed_time_mins = (end_time - start_time) / 60
     peak_mem_usage_MB = peak_mem_usage / (1024 ** 2)
     # converitng elapsed time and peak memory usage to numpy arrays
@@ -188,6 +190,7 @@ if __name__ == '__main__':
     accuracies_16 = model_16.training_model(epochs = 15, train_loader = train_loader)
     end_time = time.perf_counter()
     current_mem_usage, peak_mem_usage = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
     elapsed_time_mins = (end_time - start_time) / 60
     peak_mem_usage_MB = peak_mem_usage / (1024 ** 2)
     # converitng elapsed time and peak memory usage to numpy arrays
