@@ -1,92 +1,103 @@
+import torchvision
 from torchvision import datasets, transforms
-from torch.utils.data import DataLoader, Dataset
-import os
 import torchvision.transforms as transforms
+
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.utils.data import DataLoader, Dataset
 import torch.optim
 from torch.optim.lr_scheduler import StepLR
+
 import time
-import torchvision
 import numpy as np
 import tracemalloc
 from PIL import Image
+import os
 
-# defining the path to the dataset
-dataset_train_path = "Mini_test_dataset"
+
+# defining the path to the train and validation datasets
+dataset_training_path = "Mini_test_dataset"
 dataset_validation_path = "Mini_test_dataset"
 
+# class used to create the dataset for the model by loading images in sequences of 2, as no builtin method exists for this, based on [36] https://www.codegenes.net/blog/create-dataset-of-images-pytorch/ 
 class SequenceDataset(Dataset):
-    def __init__(self, root, transform = None):
-        self.root = root
+    def __init__(self, dataset_root_path, transform = None):
+
+        # initialising the dataset root path, transformations, list of class samples and dictionary that maps the class names to their assigned index
+        self.root = dataset_root_path
         self.transform = transform
-        self.samples = []
+        self.class_samples = []
         self.class_to_index = {}
 
         # Building classes from folder names in the root directory
         # assign class names to an integer index, which will be used as the label for the sequences of images in that class
-        classes = sorted([folder for folder in os.listdir(root) if os.path.isdir(os.path.join(root, folder))])
+        classes = sorted([folder for folder in os.listdir(dataset_root_path) if os.path.isdir(os.path.join(dataset_root_path, folder))])
         self.class_to_index = {class_name: index for index, class_name in enumerate(classes)}
 
         # Collect all sequences and their corresponding labels
         for class_name in classes:
-            class_path = os.path.join(root, class_name)
+            class_path = os.path.join(dataset_root_path, class_name)
 
+            # iterating through the sequences in each class, creating a path for each
             for sequence_name in os.listdir(class_path):
                 sequence_path = os.path.join(class_path, sequence_name)
+                # after checking if the path is a folder, adding the path and indexed label to the list of individuals
                 if os.path.isdir(sequence_path):
-                    self.samples.append((sequence_path, self.class_to_index[class_name]))
+                    self.class_samples.append((sequence_path, self.class_to_index[class_name]))
 
     def __len__(self):
-            # allowing dataloader to get the length of the sequences
-            return len(self.samples)
+            # allowing dataloader to get the length of the sequences (in this case is always 2, as model cannot process variable length seuqences)
+            return len(self.class_samples)
 
     def __getitem__(self, index):
             # allowing dataloader to get the sequences and their corresponding labels
-            sequence_path, label = self.samples[index]
+            sequence_path, label = self.class_samples[index]
 
             # Load the two images in sorted order for the LSTM (other model) to be able to learn from the sequence of images, but done here to maintain consistency
-            image_files = [file for file in sorted(os.listdir(sequence_path)) if file.lower().endswith((".jpg"))]
+            image_files = [file for file in sorted(os.listdir(sequence_path))]
             images = []
 
+            # iterating through the 2 images in each sequence
             for image_name in image_files:
+                # getting the path to the image and loading it from the disk (ensuring in colour format)
                 img_path = os.path.join(sequence_path, image_name)
                 image = Image.open(img_path).convert("RGB")
 
+                # applying the transformations to the image, listed in next code block outside class
                 if self.transform:
                     image = self.transform(image)
 
+                # adding the image to the list of images for the sequence
                 images.append(image)
 
-            # Stack into shape
+            # Stacking the images to a single tensor, so they can be processed by the models
             sequence = torch.stack(images, dim = 0)
 
+            # returning the tensor of image sequence and corresponding class index label
             return sequence, label
 
 
 
 # normalising the images using ImageNet mean and standard deviation for ResNet50 model, as well as resizing the images and converting them to tensors
-dataset_transform = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor(),       
-    transforms.Normalize(mean = [0.485, 0.456, 0.406], std = [0.229, 0.224, 0.225])
-])
-        
-train_dataset = SequenceDataset(dataset_train_path, transform=dataset_transform)
+dataset_transform = transforms.Compose([transforms.Resize((224, 224)), transforms.ToTensor(), transforms.Normalize(mean = [0.485, 0.456, 0.406], std = [0.229, 0.224, 0.225])])
+
+# Creating datasets for training and validation using instances of the above defined SequenceDataset class
+training_dataset = SequenceDataset(dataset_training_path, transform=dataset_transform)
 validation_dataset = SequenceDataset(dataset_validation_path, transform=dataset_transform)
 
 # creating a dataloader for the train set of images
 def set_train_loader(batch_size):
-    return DataLoader(train_dataset, batch_size = batch_size, shuffle = True, num_workers = 4)
+    return DataLoader(training_dataset, batch_size = batch_size, shuffle = True, num_workers = 4)
 
 # creating a dataloader for the validation set of images
 def set_validation_loader(batch_size):
     return DataLoader(validation_dataset, batch_size = batch_size, shuffle = False, num_workers = 4)
 
-# creating model class
+# creating model class, based on [37] https://www.codegenes.net/blog/import-restnet50-pytorch/
 class SheepFaceClassifier(nn.Module):
     # defining model architecture
     def __init__(self):
+
         super().__init__()
         # loading in ResNet50 model
         self.pretrained_model = torchvision.models.resnet18(weights = torchvision.models.ResNet18_Weights.IMAGENET1K_V1)
@@ -107,6 +118,7 @@ class SheepFaceClassifier(nn.Module):
     
     def forward(self, x):
 
+        # getting features from the input tensor of the seuquence of images
         batch_size, sequence_length, channel, height, width = x.shape
         # flattens sequence for CNN feature extraction, allows the CNN to still extract spatial features from the images in the sequence
         x = x.view(batch_size * sequence_length, channel, height, width)
@@ -115,48 +127,57 @@ class SheepFaceClassifier(nn.Module):
         frame_output = frame_output.view(batch_size, sequence_length, -1)
         # averaging the output from the two images in the sequence to get the output for the sequence of images
         sequence_output = frame_output.mean(dim = 1) 
+        # returns the class predictions for the sequence of images
         return sequence_output            
 
-    def training_model(self, epochs, train_loader, validation_loader, batch_size):
+    def training_and_validating_model(self, epochs, train_loader, validation_loader, batch_size):
+
         # defining the loss function and the optimiser
         loss_criterion = nn.CrossEntropyLoss()
         optimiser = torch.optim.Adam(self.parameters(), lr = 0.0001)
+        # defining the scheduler for the learning rate which reduces it by 20% every 4 epochs
         scheduler = StepLR(optimiser, step_size = 4, gamma = 0.2)
+        # initialising lists for accuracies of the model to store later as numpy files
         training_accuracies = []
         validation_accuracies = []
         best_validation_accuracy = 0
+        # setting the device to GPU if it is available, else CPU is used
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.to(device)
+        # iterating through number of epochs, training the model and validating it and storing weights and biases if it has the best validation accuracy so far
         for epoch in range(1, epochs + 1):
-            epoch_loss = 0.0
-            correct = 0
-            total = 0
+            # initialising values for loss, correct classifications and total sequence samples for accuracy calculations
+            train_epoch_loss = 0.0
+            train_correct = 0
+            train_total = 0
+            # setting the model to train mode
             self.train()
             for inputs, labels in train_loader:
-                inputs = inputs.to(device)
-                labels = labels.to(device)
+                # processing the inputs on GPU if available, else CPU is used
+                train_inputs = inputs.to(device)
+                train_labels = labels.to(device)
                 # zeroing the gradients of the optimiser
                 optimiser.zero_grad()
                 # passing the inputs through the model to get the outputs
-                outputs = self(inputs)
-                loss = loss_criterion(outputs, labels)
+                outputs = self(train_inputs)
+                loss = loss_criterion(outputs, train_labels)
                 # backpropagating the loss and updating the weights
-                epoch_loss += loss.item() * labels.size(0)
+                train_epoch_loss += loss.item() * train_labels.size(0)
                 loss.backward()
                 optimiser.step()
                 # calculating training accuracy
-                _, predicted = torch.max(outputs, 1)
-                correct += (predicted == labels).sum().item()
-                total += labels.size(0)
+                _, train_predicted = torch.max(outputs, 1)
+                train_correct += (train_predicted == train_labels).sum().item()
+                train_total += train_labels.size(0)
 
             # every 4 epochs reducing learning rate
             if epoch % 4 == 0:
                 scheduler.step()
 
             # returning training loss and accuracy for epoch
-            train_accuracy = (correct / total) * 100
+            train_accuracy = (train_correct / train_total) * 100
             training_accuracies.append(train_accuracy)
-            print(f'Epoch {epoch} - Training Loss: {epoch_loss / total}, Training Accuracy: {train_accuracy:.2f}%')
+            print(f'Epoch {epoch} - Training Loss: {train_epoch_loss / train_total}, Training Accuracy: {train_accuracy:.2f}%')
 
             # transitioning model to test mode for validation accuracy calculation
             self.eval()
@@ -167,11 +188,14 @@ class SheepFaceClassifier(nn.Module):
             # calculating validation accuracy and loss
             with torch.no_grad():
                 for inputs, labels in validation_loader:
-                    inputs, labels = inputs.to(device), labels.to(device)
+                    inputs = inputs.to(device)
+                    labels = labels.to(device)
 
+                    # passing images through the model and calculating loss from models classification
                     outputs = self(inputs)
                     loss = loss_criterion(outputs, labels)
 
+                    # computing metrics for calculating validation accuracy
                     validation_loss += loss.item() * labels.size(0)
                     _, predicted = torch.max(outputs, 1)
                     validation_correct += (predicted == labels).sum().item()
@@ -190,11 +214,9 @@ class SheepFaceClassifier(nn.Module):
 
         # returning array of training accuracies and best validation accuracy
         return training_accuracies, validation_accuracies, best_validation_accuracy
-        
+    
 
-# ensures training is only done when this script is run directly
-# prevents training from being done when this script is imported as a module, e.g for testing
-if __name__ == '__main__':
+def batch_size_6_training():
 
     # setting train_loader for batch size of 6
     train_loader = set_train_loader(batch_size = 6)
@@ -207,7 +229,7 @@ if __name__ == '__main__':
     # training the model and measuring time and memory usage
     tracemalloc.start()
     start_time = time.perf_counter()
-    training_accuracies_6, validation_accuracies_6, best_validation_accuracy_6 = model_6.training_model(epochs = 2, train_loader = train_loader, validation_loader = validation_loader, batch_size = 6)
+    training_accuracies_6, validation_accuracies_6, best_validation_accuracy_6 = model_6.training_and_validating_model(epochs = 2, train_loader = train_loader, validation_loader = validation_loader, batch_size = 6)
     end_time = time.perf_counter()
     current_mem_usage, peak_mem_usage = tracemalloc.get_traced_memory()
     tracemalloc.stop()
@@ -215,13 +237,15 @@ if __name__ == '__main__':
     peak_mem_usage_MB = peak_mem_usage / (1024 ** 2)
 
     # saving accuracies, train time and memory usage to numpy files
+    np.save('CNN_model_6_train_time.npy', np.array([elapsed_time_mins], dtype = float))
+    np.save('CNN_model_6_best_validation_accuracy.npy', np.array([best_validation_accuracy_6], dtype = float))
     np.save('CNN_model_6_train_accuracies.npy', training_accuracies_6)
     np.save('CNN_model_6_validation_accuracies.npy', validation_accuracies_6)
     np.save('CNN_model_6_peak_mem_usage.npy', np.array([peak_mem_usage_MB], dtype = float))
-    np.save('CNN_model_6_train_time.npy', np.array([elapsed_time_mins], dtype = float))
-    np.save('CNN_model_6_best_validation_accuracy.npy', np.array([best_validation_accuracy_6], dtype = float))
-    print('Training is complete for batch size 6 model')
+    return (f'Training is complete for batch size 6 CNN model with best validation accuracy of {best_validation_accuracy_6:.2f}% and training time of {elapsed_time_mins:.2f} minutes.')
+        
 
+def batch_size_16_training():
 
     # setting train_loader for batch size of 16
     train_loader = set_train_loader(batch_size = 16)
@@ -234,16 +258,25 @@ if __name__ == '__main__':
     # training the model and measuring time and memory usage
     tracemalloc.start()
     start_time = time.perf_counter()
-    training_accuracies_16, validation_accuracies_16, best_validation_accuracy_16 = model_16.training_model(epochs = 15, train_loader = train_loader, validation_loader = validation_loader, batch_size = 16)
+    training_accuracies_16, validation_accuracies_16, best_validation_accuracy_16 = model_16.training_and_validating_model(epochs = 15, train_loader = train_loader, validation_loader = validation_loader, batch_size = 16)
     end_time = time.perf_counter()
     current_mem_usage, peak_mem_usage = tracemalloc.get_traced_memory()
     tracemalloc.stop()
     elapsed_time_mins = (end_time - start_time) / 60
     peak_mem_usage_MB = peak_mem_usage / (1024 ** 2)
     # saving accuracies, train time and memory usage to numpy files
+    np.save('CNN_model_16_train_time.npy', np.array([elapsed_time_mins], dtype = float))
+    np.save('CNN_model_16_best_validation_accuracy.npy', np.array([best_validation_accuracy_16], dtype = float))
     np.save('CNN_model_16_train_accuracies.npy', training_accuracies_16)
     np.save('CNN_model_16_validation_accuracies.npy', validation_accuracies_16)
     np.save('CNN_model_16_peak_mem_usage.npy', np.array([peak_mem_usage_MB], dtype = float))
-    np.save('CNN_model_16_train_time.npy', np.array([elapsed_time_mins], dtype = float))
-    np.save('CNN_model_16_best_validation_accuracy.npy', np.array([best_validation_accuracy_16], dtype = float))
-    print('Training is complete for batch size 16 model')
+    return (f'Training is complete for batch size 16 CNN model with best validation accuracy of {best_validation_accuracy_16:.2f}% and training time of {elapsed_time_mins:.2f} minutes.')
+
+
+# ensures training is only done when this script is run directly
+# prevents training from being done when this script is imported as a module, e.g for testing
+if __name__ == '__main__':
+
+    print(batch_size_6_training())
+    print(batch_size_16_training())
+
