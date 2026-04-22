@@ -1,13 +1,13 @@
-from torch import device
+import torchvision
 from torchvision import datasets, transforms
-from torch.utils.data import DataLoader, Dataset
 import torchvision.transforms as transforms
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim
 from torch.optim.lr_scheduler import StepLR
+from torch import device
+from torch.utils.data import DataLoader, Dataset
 import time
-import torchvision
 import numpy as np
 import tracemalloc
 from PIL import Image
