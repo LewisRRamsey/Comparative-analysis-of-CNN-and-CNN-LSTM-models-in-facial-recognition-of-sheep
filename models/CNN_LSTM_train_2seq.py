@@ -4,9 +4,10 @@ import torchvision.transforms as transforms
 
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import DataLoader, Dataset
 import torch.optim
 from torch.optim.lr_scheduler import StepLR
+from torch import device
+from torch.utils.data import DataLoader, Dataset
 
 import time
 import numpy as np
@@ -14,9 +15,8 @@ import tracemalloc
 from PIL import Image
 import os
 
-
 # defining the path to the train and validation datasets
-dataset_training_path = "Final dataset/train"
+dataset_train_path = "Final dataset/train"
 dataset_validation_path = "Final dataset/validation"
 
 # class used to create the dataset for the model by loading images in sequences of 2, as no builtin method exists for this, based on [36] https://www.codegenes.net/blog/create-dataset-of-images-pytorch/ 
@@ -79,58 +79,76 @@ class SequenceDataset(Dataset):
 
 
 # normalising the images using ImageNet mean and standard deviation for ResNet50 model, as well as resizing the images and converting them to tensors
-dataset_transform = transforms.Compose([transforms.Resize((224, 224)), transforms.ToTensor(), transforms.Normalize(mean = [0.485, 0.456, 0.406], std = [0.229, 0.224, 0.225])])
-
+dataset_transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),       
+    transforms.Normalize(mean = [0.485, 0.456, 0.406], std = [0.229, 0.224, 0.225])
+])
+        
 # Creating datasets for training and validation using instances of the above defined SequenceDataset class
-training_dataset = SequenceDataset(dataset_training_path, transform=dataset_transform)
+train_dataset = SequenceDataset(dataset_train_path, transform=dataset_transform)
 validation_dataset = SequenceDataset(dataset_validation_path, transform=dataset_transform)
+
 
 # creating a dataloader for the train set of images
 def set_train_loader(batch_size):
-    return DataLoader(training_dataset, batch_size = batch_size, shuffle = True, num_workers = 4)
+    return DataLoader(train_dataset, batch_size = batch_size, shuffle = True, num_workers = 4)
 
 # creating a dataloader for the validation set of images
 def set_validation_loader(batch_size):
     return DataLoader(validation_dataset, batch_size = batch_size, shuffle = False, num_workers = 4)
 
 # creating model class, based on [37] https://www.codegenes.net/blog/import-restnet50-pytorch/
-class SheepFaceClassifier(nn.Module):
-    # defining model architecture
-    def __init__(self):
+class SheepFaceClassifierCNNLSTM(nn.Module):
+    # defining model architecture for CNN LSTM model
+    def __init__(self, batch_size):
 
         super().__init__()
-        # loading in ResNet50 model
+        self.batch_size = batch_size
+        # loading in ResNet18 model
         self.pretrained_model = torchvision.models.resnet18(weights = torchvision.models.ResNet18_Weights.IMAGENET1K_V1)
-        # changing the number of output features in the fully connected layer to 34, as there are 34 classes in the dataset
-        self.pretrained_model.fc = nn.Linear(in_features = 512, out_features = 34, bias = True)
+        # removing the adaptive pooling layer and the fully connected layer from the pretrained model
+        self.pretrained_model = nn.Sequential(*list(self.pretrained_model.children())[:-2])
+        # defining the lstm layer
+        self.lstm = nn.LSTM(input_size = 25088, hidden_size = 400, num_layers = 2, batch_first = True, bidirectional = True)
+        # creating classification layer to get the output for 34 classes
+        self.classification_layer = nn.Linear(in_features = 400*2, out_features = 34, bias = True)
         # freezing all layers initially in the pretrained model
         for parameters in self.pretrained_model.parameters():
             parameters.requires_grad = False
-        # unfreezing batchnorm layers, layer 4 and the fully connected layer in the pretrained model to allow them to be trained on the dataset, allowing the model to learn from the dataset while still benefiting from the pretrained weights in the frozen layers
-        for m in self.pretrained_model.modules():
-            if isinstance(m, nn.BatchNorm2d):
-                for p in m.parameters():
+        # unfreezing batchnorm layers, layer 4 in the pretrained model to allow it to be trained on the dataset, allowing the model to learn from the dataset while still benefiting from the pretrained weights in the frozen layers
+        for module in self.pretrained_model.modules():
+            if isinstance(module, nn.BatchNorm2d):
+                for p in module.parameters():
                     p.requires_grad = True
-        for parameters in self.pretrained_model.layer4.parameters():
+        # accesses layer 4 which is the last layer in the pretrained model
+        for parameters in self.pretrained_model[-1].parameters():
             parameters.requires_grad = True
-        for parameters in self.pretrained_model.fc.parameters():
-            parameters.requires_grad = True
-    
+
+
     def forward(self, x):
-
+        
         # getting features from the input tensor of the seuquence of images
-        batch_size, sequence_length, channel, height, width = x.shape
-        # flattens sequence for CNN feature extraction, allows the CNN to still extract spatial features from the images in the sequence
-        x = x.view(batch_size * sequence_length, channel, height, width)
-        # passing the input through the ResNet18 model to get the output for each image in the sequence
-        frame_output = self.pretrained_model(x)
-        frame_output = frame_output.view(batch_size, sequence_length, -1)
-        # averaging the output from the two images in the sequence to get the output for the sequence of images
-        sequence_output = frame_output.mean(dim = 1) 
-        # returns the class predictions for the sequence of images
-        return sequence_output            
+        batch_size, sequence_length, channels, height, width = x.shape
 
-    def training_and_validating_model(self, epochs, train_loader, validation_loader, batch_size):
+        # Merge batch and time for CNN, so that it can percieve the sequence of images as a batch of images
+        x = x.view(batch_size * sequence_length, channels, height, width)
+
+        # CNN feature extraction
+        features = self.pretrained_model(x)       
+
+        # Reshape back to (batch, time, features), allows the LSTM to still extract spatial features from the images
+        feats = features.view(batch_size, sequence_length, -1)    
+        
+        # extracting information from the LSTM layer
+        lstm_output, _ = self.lstm(feats)      
+        lstm_output = lstm_output[:, -1, :]                 
+
+        # returns the class predictions for the sequence of images
+        return self.classification_layer(lstm_output)
+
+
+    def training_and_validating_model(self, epochs, train_loader, validation_loader):
 
         # defining the loss function and the optimiser
         loss_criterion = nn.CrossEntropyLoss()
@@ -140,7 +158,7 @@ class SheepFaceClassifier(nn.Module):
         # initialising lists for accuracies of the model to store later as numpy files
         training_accuracies = []
         validation_accuracies = []
-        best_validation_accuracy = 0
+        best_validation_accuracy = 0.0
         # setting the device to GPU if it is available, else CPU is used
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.to(device)
@@ -153,22 +171,22 @@ class SheepFaceClassifier(nn.Module):
             # setting the model to train mode
             self.train()
             for inputs, labels in train_loader:
-                # processing the inputs on GPU if available, else CPU is used
-                train_inputs = inputs.to(device)
-                train_labels = labels.to(device)
+                # process the inputs on GPU if available, else CPU is used
+                inputs = inputs.to(device)
+                labels = labels.to(device)
                 # zeroing the gradients of the optimiser
                 optimiser.zero_grad()
                 # passing the inputs through the model to get the outputs
-                outputs = self(train_inputs)
-                loss = loss_criterion(outputs, train_labels)
+                outputs = self(inputs)
+                loss = loss_criterion(outputs, labels)
                 # backpropagating the loss and updating the weights
-                train_epoch_loss += loss.item() * train_labels.size(0)
+                train_epoch_loss += loss.item() * labels.size(0)
                 loss.backward()
                 optimiser.step()
                 # calculating training accuracy
                 _, train_predicted = torch.max(outputs, 1)
-                train_correct += (train_predicted == train_labels).sum().item()
-                train_total += train_labels.size(0)
+                train_correct += (train_predicted == labels).sum().item()
+                train_total += labels.size(0)
 
             # every 4 epochs reducing learning rate
             if epoch % 4 == 0:
@@ -188,8 +206,7 @@ class SheepFaceClassifier(nn.Module):
             # calculating validation accuracy and loss
             with torch.no_grad():
                 for inputs, labels in validation_loader:
-                    inputs = inputs.to(device)
-                    labels = labels.to(device)
+                    inputs, labels = inputs.to(device), labels.to(device)
 
                     # passing images through the model and calculating loss from models classification
                     outputs = self(inputs)
@@ -209,12 +226,12 @@ class SheepFaceClassifier(nn.Module):
             # saving model if new best validation accuracy is found
             if validation_accuracy > best_validation_accuracy:
                 best_validation_accuracy = validation_accuracy
-                torch.save(self.state_dict(), f'./CNN_facial_recognition_model_batch_size_{batch_size}.pth')
+                torch.save(self.state_dict(), f'./CNN_LSTM_facial_recognition_model_batch_size_{self.batch_size}.pth')
                 print("Saved new best model")
 
         # returning array of training accuracies and best validation accuracy
         return training_accuracies, validation_accuracies, best_validation_accuracy
-    
+
 
 def batch_size_6_training():
 
@@ -225,11 +242,11 @@ def batch_size_6_training():
     validation_loader = set_validation_loader(batch_size = 6)
 
     # creating an instance of the model with batch size of 6
-    model_6 = SheepFaceClassifier()
+    model_6 = SheepFaceClassifierCNNLSTM(batch_size = 6)
     # training the model and measuring time and memory usage
     tracemalloc.start()
     start_time = time.perf_counter()
-    training_accuracies_6, validation_accuracies_6, best_validation_accuracy_6 = model_6.training_and_validating_model(epochs = 15, train_loader = train_loader, validation_loader = validation_loader, batch_size = 6)
+    training_accuracies_6, validation_accuracies_6, best_validation_accuracy_6 = model_6.training_and_validating_model(epochs = 15, train_loader = train_loader, validation_loader = validation_loader)
     end_time = time.perf_counter()
     current_mem_usage, peak_mem_usage = tracemalloc.get_traced_memory()
     tracemalloc.stop()
@@ -237,13 +254,13 @@ def batch_size_6_training():
     peak_mem_usage_MB = peak_mem_usage / (1024 ** 2)
 
     # saving accuracies, train time and memory usage to numpy files
-    np.save('CNN_model_6_train_time.npy', np.array([elapsed_time_mins], dtype = float))
-    np.save('CNN_model_6_best_validation_accuracy.npy', np.array([best_validation_accuracy_6], dtype = float))
-    np.save('CNN_model_6_train_accuracies.npy', training_accuracies_6)
-    np.save('CNN_model_6_validation_accuracies.npy', validation_accuracies_6)
-    np.save('CNN_model_6_peak_mem_usage.npy', np.array([peak_mem_usage_MB], dtype = float))
-    return (f'Training is complete for batch size 6 CNN model with best validation accuracy of {best_validation_accuracy_6:.2f}% and training time of {elapsed_time_mins:.2f} minutes.')
-        
+    np.save('CNN_LSTM_model_6_train_time.npy', np.array([elapsed_time_mins], dtype = float))
+    np.save('CNN_LSTM_model_6_best_validation_accuracy.npy', np.array([best_validation_accuracy_6], dtype = float))
+    np.save('CNN_LSTM_model_6_train_accuracies.npy', training_accuracies_6)
+    np.save('CNN_LSTM_model_6_validation_accuracies.npy', validation_accuracies_6)
+    np.save('CNN_LSTM_model_6_peak_mem_usage.npy', np.array([peak_mem_usage_MB], dtype = float))
+    return (f'Training is complete for batch size 6 CNN-LSTM model with best validation accuracy of {best_validation_accuracy_6:.2f}% and training time of {elapsed_time_mins:.2f} minutes.')
+
 
 def batch_size_8_training():
 
@@ -254,29 +271,29 @@ def batch_size_8_training():
     validation_loader = set_validation_loader(batch_size = 8)
 
     # creating an instance of the model with batch size of 8
-    model_8 = SheepFaceClassifier()
+    model_8 = SheepFaceClassifierCNNLSTM(batch_size = 8)
     # training the model and measuring time and memory usage
     tracemalloc.start()
     start_time = time.perf_counter()
-    training_accuracies_8, validation_accuracies_8, best_validation_accuracy_8 = model_8.training_and_validating_model(epochs = 15, train_loader = train_loader, validation_loader = validation_loader, batch_size = 16)
+    training_accuracies_8, validation_accuracies_8, best_validation_accuracy_8 = model_8.training_and_validating_model(epochs = 15, train_loader = train_loader, validation_loader = validation_loader)
     end_time = time.perf_counter()
     current_mem_usage, peak_mem_usage = tracemalloc.get_traced_memory()
     tracemalloc.stop()
     elapsed_time_mins = (end_time - start_time) / 60
     peak_mem_usage_MB = peak_mem_usage / (1024 ** 2)
+
     # saving accuracies, train time and memory usage to numpy files
-    np.save('CNN_model_8_train_time.npy', np.array([elapsed_time_mins], dtype = float))
-    np.save('CNN_model_8_best_validation_accuracy.npy', np.array([best_validation_accuracy_8], dtype = float))
-    np.save('CNN_model_8_train_accuracies.npy', training_accuracies_8)
-    np.save('CNN_model_8_validation_accuracies.npy', validation_accuracies_8)
-    np.save('CNN_model_8_peak_mem_usage.npy', np.array([peak_mem_usage_MB], dtype = float))
-    return (f'Training is complete for batch size 8 CNN model with best validation accuracy of {best_validation_accuracy_8:.2f}% and training time of {elapsed_time_mins:.2f} minutes.')
+    np.save('CNN_LSTM_model_8_train_accuracies.npy', training_accuracies_8)
+    np.save('CNN_LSTM_model_8_validation_accuracies.npy', validation_accuracies_8)
+    np.save('CNN_LSTM_model_8_peak_mem_usage.npy', np.array([peak_mem_usage_MB], dtype = float))
+    np.save('CNN_LSTM_model_8_train_time.npy', np.array([elapsed_time_mins], dtype = float))
+    np.save('CNN_LSTM_model_8_best_validation_accuracy.npy', np.array([best_validation_accuracy_8], dtype = float))
+    return (f'Training is complete for batch size 8 CNN-LSTM model with best validation accuracy of {best_validation_accuracy_8:.2f}% and training time of {elapsed_time_mins:.2f} minutes.')
 
 
 # ensures training is only done when this script is run directly
 # prevents training from being done when this script is imported as a module, e.g for testing
 if __name__ == '__main__':
 
-    print(batch_size_6_training())
+    #print(batch_size_6_training())
     print(batch_size_8_training())
-
