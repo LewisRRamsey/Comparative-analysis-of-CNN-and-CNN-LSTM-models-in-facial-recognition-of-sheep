@@ -106,5 +106,5 @@ for sheep_type in ["mc", "su", "ws"]:
                 augmentation_function(sheep_type, class_index)
 
 # iterating through pd sheep classes 9 and 10 which were not included in the original augmentation process
-for class_index in range(9, 11):
+for class_index in range(1, 11):
         augmentation_function("pd", class_index)
