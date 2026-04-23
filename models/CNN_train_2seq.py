@@ -209,7 +209,7 @@ class SheepFaceClassifier(nn.Module):
             # saving model if new best validation accuracy is found
             if validation_accuracy > best_validation_accuracy:
                 best_validation_accuracy = validation_accuracy
-                torch.save(self.state_dict(), f'./CNN_LSTM_facial_recognition_model_batch_size_{batch_size}.pth')
+                torch.save(self.state_dict(), f'./CNN_facial_recognition_model_batch_size_{batch_size}.pth')
                 print("Saved new best model")
 
         # returning array of training accuracies and best validation accuracy
