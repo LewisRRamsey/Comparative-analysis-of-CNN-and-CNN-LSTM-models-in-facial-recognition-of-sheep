@@ -134,7 +134,7 @@ class SheepFaceClassifier(nn.Module):
 
         # defining the loss function and the optimiser
         loss_criterion = nn.CrossEntropyLoss()
-        optimiser = torch.optim.Adam(self.parameters(), lr = 0.0001)
+        optimiser = torch.optim.Adam(self.parameters(), lr = 0.00005)
         # defining the scheduler for the learning rate which reduces it by 20% every 4 epochs
         scheduler = StepLR(optimiser, step_size = 4, gamma = 0.2)
         # initialising lists for accuracies of the model to store later as numpy files
@@ -229,7 +229,7 @@ def batch_size_6_training():
     # training the model and measuring time and memory usage
     tracemalloc.start()
     start_time = time.perf_counter()
-    training_accuracies_6, validation_accuracies_6, best_validation_accuracy_6 = model_6.training_and_validating_model(epochs = 2, train_loader = train_loader, validation_loader = validation_loader, batch_size = 6)
+    training_accuracies_6, validation_accuracies_6, best_validation_accuracy_6 = model_6.training_and_validating_model(epochs = 15, train_loader = train_loader, validation_loader = validation_loader, batch_size = 6)
     end_time = time.perf_counter()
     current_mem_usage, peak_mem_usage = tracemalloc.get_traced_memory()
     tracemalloc.stop()
