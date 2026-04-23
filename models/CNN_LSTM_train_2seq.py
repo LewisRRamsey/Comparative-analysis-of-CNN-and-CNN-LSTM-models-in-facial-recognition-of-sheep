@@ -108,9 +108,9 @@ class SheepFaceClassifierCNNLSTM(nn.Module):
         # removing the adaptive pooling layer and the fully connected layer from the pretrained model
         self.pretrained_model = nn.Sequential(*list(self.pretrained_model.children())[:-2])
         # defining the lstm layer
-        self.lstm = nn.LSTM(input_size = 25088, hidden_size = 200, num_layers = 2, batch_first = True, bidirectional = True)
+        self.lstm = nn.LSTM(input_size = 25088, hidden_size = 400, num_layers = 2, batch_first = True, bidirectional = True)
         # creating classification layer to get the output for 34 classes
-        self.classification_layer = nn.Linear(in_features = 200*2, out_features = 34, bias = True)
+        self.classification_layer = nn.Linear(in_features = 400*2, out_features = 34, bias = True)
         # freezing all layers initially in the pretrained model
         for parameters in self.pretrained_model.parameters():
             parameters.requires_grad = False
