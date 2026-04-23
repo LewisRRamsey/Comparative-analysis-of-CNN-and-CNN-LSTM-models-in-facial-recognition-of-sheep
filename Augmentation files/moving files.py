@@ -20,7 +20,7 @@ def file_moving_function(source_folder, destination_folders, probabilities = [0.
 
 # iterating over all classes for the three breeds with 8 classes each in the dataset
 for sheep_type in ["mc", "su", "ws"]:
-    for class_index in range(1, 8):
+    for class_index in range(1, 9):
         # setting source and destination folders for moving files
         source_folder = f"C:/University/Year 3 project/Project files/Proper dataset/{sheep_type}sheep{class_index}"
         destination_folders = [
@@ -31,7 +31,7 @@ for sheep_type in ["mc", "su", "ws"]:
         file_moving_function(source_folder, destination_folders)
 
 # making seperate loop for poll dorset sheep which have 2 more classes than the other three breeds
-for class_index in range(1, 10):
+for class_index in range(1, 11):
         # setting source and destination folders for moving files
         source_folder = f"C:/University/Year 3 project/Project files/Proper dataset/pdsheep{class_index}"
         destination_folders = [
