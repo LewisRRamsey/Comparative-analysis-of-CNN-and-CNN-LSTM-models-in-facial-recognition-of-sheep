@@ -16,8 +16,8 @@ import os
 
 
 # defining the path to the train and validation datasets
-dataset_training_path = "Mini_test_dataset"
-dataset_validation_path = "Mini_test_dataset"
+dataset_training_path = "Final dataset/train"
+dataset_validation_path = "Final dataset/validation"
 
 # class used to create the dataset for the model by loading images in sequences of 2, as no builtin method exists for this, based on [36] https://www.codegenes.net/blog/create-dataset-of-images-pytorch/ 
 class SequenceDataset(Dataset):
