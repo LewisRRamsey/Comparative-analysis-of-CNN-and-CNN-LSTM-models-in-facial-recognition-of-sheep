@@ -9,7 +9,7 @@ import random
 # function for generating noise for images (put as preprocessing function in ImageDataGenerator) 
 def generate_gaussian_noise(image):
     image = image.astype('float32')
-    noise = nr.normal(loc = 0.0, scale = 0.5, size = image.shape)
+    noise = nr.normal(loc = 0.0, scale = 0.4, size = image.shape)
     noisy_image = image + noise
     return noisy_image
 
@@ -49,61 +49,62 @@ def file_moving_function(source, destination):
                 os.rename(source_path, destination_path)
         
 
-# input directory for where original image is accessed from, changes with every class in dataset (after every augmentation run)
-for sheep_type in ["mc", "pd", "su", "ws"]:
-        for image_index in range(1, 26):
+def augmentation_function(sheep_type, image_index):
+        # horzintal flip image augmentation generation
+
+        # setting input and output directories for horizontal flip image generation
+        input_directory = f"C:/University/Year 3 project/Project files/Proper working dataset - Copy/train/{sheep_type}sheep{image_index}" 
+        output_directory = f"C:/University/Year 3 project/Project files/Proper working dataset/train/{sheep_type}sheep{image_index}"
+
+        # creates output directories if they do not exist
+        os.makedirs(output_directory, exist_ok=True)
+
+        for filename in os.listdir(input_directory):
+                # processing image into array
+                image_array = image_processing_function(input_directory, filename)
+                i = 0
+                for batch in datagen_horizontal.flow(image_array, batch_size = 1, save_to_dir = output_directory, save_prefix = f'{sheep_type}sheep{image_index}hflip', save_format = 'jpg'):
+                        i += 1
+                        if i == 1:
+                                break
 
 
-                # horzintal flip image augmentation generation
+        # all generated images augmentation (rotation, brightness adjustment, shearing, zoom, width shift, height shift)
+        input_directory = f"C:/University/Year 3 project/Project files/Proper working dataset - Copy/train/{sheep_type}sheep{image_index}" 
+        output_directory = f"C:/University/Year 3 project/Project files/Proper working dataset/train/{sheep_type}sheep{image_index}"
 
-                # setting input and output directories for horizontal flip image generation
-                input_directory = f"C:/University/Year 3 project/Project files/sheep_face_dataset/{sheep_type}sheep{image_index}" 
-                output_directory = f"C:/University/Year 3 project/Project files/sheep_face_dataset/{sheep_type}sheep{image_index}"
+        for filename in os.listdir(input_directory):
+                image_array = image_processing_function(input_directory, filename)
+                # creating the augmented images, stopping at 4 augmentations per image
+                i = 0
+                for batch in datagen_main.flow(image_array, batch_size = 1, save_to_dir = output_directory, save_prefix = f'{sheep_type}sheep{image_index}', save_format = 'jpg'):
+                        i += 1
+                        if i == 4:
+                                break
 
-                # creates output directories if they do not exist
-                os.makedirs(output_directory, exist_ok=True)
 
-                for filename in os.listdir(input_directory):
-                        # processing image into array
-                        image_array = image_processing_function(input_directory, filename)
-                        i = 0
-                        for batch in datagen_horizontal.flow(image_array, batch_size = 1, save_to_dir = output_directory, save_prefix = f'{sheep_type}sheep{image_index}hflip', save_format = 'jpg'):
+        # noisy image augmentation generation
+        input_directory = f"C:/University/Year 3 project/Project files/Proper working dataset - Copy/train/{sheep_type}sheep{image_index}" 
+        output_directory = f"C:/University/Year 3 project/Project files/Proper working dataset/train/{sheep_type}sheep{image_index}"
+
+        os.makedirs(output_directory, exist_ok=True)
+
+        for filename in os.listdir(input_directory):
+                image_array = image_processing_function(input_directory, filename)
+                # creating the noisy augmented image, stopping at 1 augmentations per image, with 10% chance of augmentation occuring for each image
+                i = 0
+                num = random.randint(1, 10)
+                if num == 4:
+                        for batch in datagen_noise.flow(image_array, batch_size = 1, save_to_dir = output_directory, save_prefix = f'{sheep_type}sheep{image_index}noise', save_format = 'jpg'):
                                 i += 1
                                 if i == 1:
                                         break
 
+# iterating through all sheep breeds with 8 classes each
+for sheep_type in ["mc", "su", "ws"]:
+        for class_index in range(1, 9):
+                augmentation_function(sheep_type, class_index)
 
-                # all generated images augmentation (rotation, brightness adjustment, shearing, zoom, width shift, height shift)
-                
-                # setting input and output directories for height shifted image generation
-                input_directory = f"C:/University/Year 3 project/Project files/sheep_face_dataset/{sheep_type}sheep{image_index}" 
-                output_directory = f"C:/University/Year 3 project/Project files/sheep_face_dataset/{sheep_type}sheep{image_index}"
-
-                for filename in os.listdir(input_directory):
-                        image_array = image_processing_function(input_directory, filename)
-                        # creating the noisy augmented image, stopping at 1 augmentations per image
-                        i = 0
-                        for batch in datagen_main.flow(image_array, batch_size = 1, save_to_dir = output_directory, save_prefix = f'{sheep_type}sheep{image_index}', save_format = 'jpg'):
-                                i += 1
-                                if i == 25:
-                                        break
-
-
-                # noisy image augmentation generation
-                
-                # setting input and output directories for height shifted image generation
-                input_directory = f"C:/University/Year 3 project/Project files/sheep_face_dataset/{sheep_type}sheep{image_index}" 
-                output_directory = f"C:/University/Year 3 project/Project files/sheep_face_dataset/{sheep_type}sheep{image_index}"
-
-                os.makedirs(output_directory, exist_ok=True)
-
-                for filename in os.listdir(input_directory):
-                        image_array = image_processing_function(input_directory, filename)
-                        # creating the noisy augmented image, stopping at 1 augmentations per image
-                        i = 0
-                        num = random.randint(1, 10)
-                        if num == 4:
-                                for batch in datagen_noise.flow(image_array, batch_size = 1, save_to_dir = output_directory, save_prefix = f'{sheep_type}sheep{image_index}noise', save_format = 'jpg'):
-                                        i += 1
-                                        if i == 1:
-                                                break
+# iterating through pd sheep classes 9 and 10 which were not included in the original augmentation process
+for class_index in range(9, 11):
+        augmentation_function("pd", class_index)
