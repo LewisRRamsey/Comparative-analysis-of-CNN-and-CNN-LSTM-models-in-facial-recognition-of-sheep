@@ -105,23 +105,22 @@ class SheepFaceClassifierCNNLSTM(nn.Module):
         self.batch_size = batch_size
         # loading in ResNet18 model
         self.pretrained_model = torchvision.models.resnet18(weights = torchvision.models.ResNet18_Weights.IMAGENET1K_V1)
-        # removing the fully connected layer from the pretrained model
-        self.pretrained_model.fc = nn.Identity()
-        # setting the ResNet18 feature size to 512, as the output from the ResNet18 model will be used as the input to the LSTM layer
-        self.feature_dim = 512
+        # removing the adaptive pooling layer and the fully connected layer from the pretrained model
+        self.pretrained_model = nn.Sequential(*list(self.pretrained_model.children())[:-2])
         # defining the lstm layer
-        self.lstm = nn.LSTM(input_size = self.feature_dim, hidden_size = 200, num_layers = 2, batch_first = True, bidirectional = True)
+        self.lstm = nn.LSTM(input_size = 25088, hidden_size = 200, num_layers = 2, batch_first = True, bidirectional = True)
         # creating classification layer to get the output for 34 classes
         self.classification_layer = nn.Linear(in_features = 200*2, out_features = 34, bias = True)
         # freezing all layers initially in the pretrained model
         for parameters in self.pretrained_model.parameters():
             parameters.requires_grad = False
         # unfreezing batchnorm layers, layer 4 in the pretrained model to allow it to be trained on the dataset, allowing the model to learn from the dataset while still benefiting from the pretrained weights in the frozen layers
-        for m in self.pretrained_model.modules():
-            if isinstance(m, nn.BatchNorm2d):
-                for p in m.parameters():
+        for module in self.pretrained_model.modules():
+            if isinstance(module, nn.BatchNorm2d):
+                for p in module.parameters():
                     p.requires_grad = True
-        for parameters in self.pretrained_model.layer4.parameters():
+        # accesses layer 4 which is the last layer in the pretrained model
+        for parameters in self.pretrained_model[-1].parameters():
             parameters.requires_grad = True
 
 
