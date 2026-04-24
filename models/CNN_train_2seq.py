@@ -278,5 +278,5 @@ def batch_size_8_training():
 if __name__ == '__main__':
 
     print(batch_size_6_training())
-    print(batch_size_8_training())
+    #print(batch_size_8_training())
 

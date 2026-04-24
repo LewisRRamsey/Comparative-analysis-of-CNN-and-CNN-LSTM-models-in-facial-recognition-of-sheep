@@ -51,10 +51,10 @@ plt.show()
 # creating a table to compare the peak validation accuracy, training time and training peak memory usage for the CNN and CNN-LSTM models with batch sizes of 6 and 8
 
 data = [
-    ["CNN (bs = 6)", f"{np.load('CNN_model_6_train_time.npy')[0]:.2f}", f"{np.load('CNN_model_6_peak_mem_usage.npy')[0]:.2f}", f"{np.load('CNN_model_6_best_validation_accuracy.npy')[0] * 100:.2f}"],
-    ["CNN (bs = 8)", f"{np.load('CNN_model_8_train_time.npy')[0]:.2f}", f"{np.load('CNN_model_8_peak_mem_usage.npy')[0]:.2f}", f"{np.load('CNN_model_8_best_validation_accuracy.npy')[0] * 100:.2f}"],
-    ["CNN-LSTM (bs = 6)", f"{np.load('CNN_LSTM_model_6_train_time.npy')[0]:.2f}", f"{np.load('CNN_LSTM_model_6_peak_mem_usage.npy')[0]:.2f}", f"{np.load('CNN_LSTM_model_6_best_validation_accuracy.npy')[0] * 100:.2f}"],
-    ["CNN-LSTM (bs = 8)", f"{np.load('CNN_LSTM_model_8_train_time.npy')[0]:.2f}", f"{np.load('CNN_LSTM_model_8_peak_mem_usage.npy')[0]:.2f}", f"{np.load('CNN_LSTM_model_8_best_validation_accuracy.npy')[0] * 100:.2f}"]
+    ["CNN (bs = 6)", f"{np.load('CNN_model_6_train_time.npy')[0]:.2f}", f"{np.load('CNN_model_6_peak_mem_usage.npy')[0]:.2f}", f"{np.load('CNN_model_6_best_validation_accuracy.npy')[0]:.2f}"],
+    ["CNN (bs = 8)", f"{np.load('CNN_model_8_train_time.npy')[0]:.2f}", f"{np.load('CNN_model_8_peak_mem_usage.npy')[0]:.2f}", f"{np.load('CNN_model_8_best_validation_accuracy.npy')[0]:.2f}"],
+    ["CNN-LSTM (bs = 6)", f"{np.load('CNN_LSTM_model_6_train_time.npy')[0]:.2f}", f"{np.load('CNN_LSTM_model_6_peak_mem_usage.npy')[0]:.2f}", f"{np.load('CNN_LSTM_model_6_best_validation_accuracy.npy')[0]:.2f}"],
+    ["CNN-LSTM (bs = 8)", f"{np.load('CNN_LSTM_model_8_train_time.npy')[0]:.2f}", f"{np.load('CNN_LSTM_model_8_peak_mem_usage.npy')[0]:.2f}", f"{np.load('CNN_LSTM_model_8_best_validation_accuracy.npy')[0]:.2f}"]
 ]
 
 columns = ["Model", "Training Time (minutes)", "Train Peak Mem Usage (MB)", "Validation Accuracy (%)"]
