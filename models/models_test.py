@@ -75,10 +75,10 @@ test_transform = transforms.Compose([transforms.Resize((224, 224)), transforms.T
 # loading in the test dataset and creating a dataloader for it
 test_dataset_path = "Final dataset/test"
 test_dataset = SequenceDataset(test_dataset_path, transform = test_transform)
-test_data_loader = DataLoader(test_dataset, batch_size = 8, shuffle = False)
+
 
 # Evaluate the model on the test dataset, gradients not needed for evaluation
-def test_model(facial_recognition_model): 
+def test_model(facial_recognition_model, test_data_loader): 
 
     with torch.no_grad():
 
@@ -108,6 +108,7 @@ def test_model(facial_recognition_model):
     
 # Load the trained neural network model
 facial_recognition_model = train.SheepFaceClassifier()
+test_data_loader = DataLoader(test_dataset, batch_size = 6, shuffle = False)
 
 # calculating test accuracy, precision, recall and f1 score for CNN with batch size 6
 state_dict = torch.load('./CNN_facial_recognition_model_batch_size_6.pth', map_location='cpu')
@@ -115,7 +116,7 @@ facial_recognition_model.load_state_dict(state_dict)
 facial_recognition_model.eval()
 tracemalloc.start()
 start_time = time.perf_counter()
-test_accuracy, test_precision, test_recall, test_f1 = test_model(facial_recognition_model)
+test_accuracy, test_precision, test_recall, test_f1 = test_model(facial_recognition_model, test_data_loader)
 end_time = time.perf_counter()
 current_mem_usage, peak_mem_usage = tracemalloc.get_traced_memory()
 tracemalloc.stop()
@@ -128,13 +129,15 @@ np.save('CNN_6_test_precision.npy', test_precision)
 np.save('CNN_6_test_recall.npy', test_recall)
 np.save('CNN_6_test_f1.npy', test_f1)
 
+test_data_loader = DataLoader(test_dataset, batch_size = 8, shuffle = False)
+
 # calculating test accuracy, precision, recall and f1 score for CNN with batch size 8
 state_dict = torch.load('./CNN_facial_recognition_model_batch_size_8.pth', map_location='cpu')
 facial_recognition_model.load_state_dict(state_dict)
 facial_recognition_model.eval()
 tracemalloc.start()
 start_time = time.perf_counter()
-test_accuracy, test_precision, test_recall, test_f1 = test_model(facial_recognition_model)
+test_accuracy, test_precision, test_recall, test_f1 = test_model(facial_recognition_model, test_data_loader)
 end_time = time.perf_counter()
 current_mem_usage, peak_mem_usage = tracemalloc.get_traced_memory()
 tracemalloc.stop()
@@ -149,6 +152,7 @@ np.save('CNN_8_test_f1.npy', test_f1)
 
 # Load the trained neural network model
 facial_recognition_model = train_lstm.SheepFaceClassifierCNNLSTM(6)
+test_data_loader = DataLoader(test_dataset, batch_size = 6, shuffle = False)
 
 # calculating test accuracy, precision, recall and f1 score for CNN-LSTM with batch size 6
 state_dict = torch.load('./CNN_LSTM_facial_recognition_model_batch_size_6.pth', map_location='cpu')
@@ -156,7 +160,7 @@ facial_recognition_model.load_state_dict(state_dict)
 facial_recognition_model.eval()
 tracemalloc.start()
 start_time = time.perf_counter()
-test_accuracy, test_precision, test_recall, test_f1 = test_model(facial_recognition_model)
+test_accuracy, test_precision, test_recall, test_f1 = test_model(facial_recognition_model, test_data_loader)
 end_time = time.perf_counter()
 current_mem_usage, peak_mem_usage = tracemalloc.get_traced_memory()
 tracemalloc.stop()
@@ -170,6 +174,7 @@ np.save('CNN_LSTM_6_test_recall.npy', test_recall)
 np.save('CNN_LSTM_6_test_f1.npy', test_f1)
 
 facial_recognition_model = train_lstm.SheepFaceClassifierCNNLSTM(8)
+test_data_loader = DataLoader(test_dataset, batch_size = 8, shuffle = False)
 
 # calculating test accuracy, precision, recall and f1 score for CNN-LSTM with batch size 8
 state_dict = torch.load('./CNN_LSTM_facial_recognition_model_batch_size_8.pth', map_location='cpu')
@@ -177,7 +182,7 @@ facial_recognition_model.load_state_dict(state_dict)
 facial_recognition_model.eval()
 tracemalloc.start()
 start_time = time.perf_counter()
-test_accuracy, test_precision, test_recall, test_f1 = test_model(facial_recognition_model)
+test_accuracy, test_precision, test_recall, test_f1 = test_model(facial_recognition_model, test_data_loader)
 end_time = time.perf_counter()
 current_mem_usage, peak_mem_usage = tracemalloc.get_traced_memory()
 tracemalloc.stop()
