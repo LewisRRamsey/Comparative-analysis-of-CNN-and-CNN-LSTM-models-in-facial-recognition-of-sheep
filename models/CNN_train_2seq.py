@@ -258,7 +258,7 @@ def batch_size_8_training():
     # training the model and measuring time and memory usage
     tracemalloc.start()
     start_time = time.perf_counter()
-    training_accuracies_8, validation_accuracies_8, best_validation_accuracy_8 = model_8.training_and_validating_model(epochs = 15, train_loader = train_loader, validation_loader = validation_loader, batch_size = 16)
+    training_accuracies_8, validation_accuracies_8, best_validation_accuracy_8 = model_8.training_and_validating_model(epochs = 15, train_loader = train_loader, validation_loader = validation_loader, batch_size = 8)
     end_time = time.perf_counter()
     current_mem_usage, peak_mem_usage = tracemalloc.get_traced_memory()
     tracemalloc.stop()
