@@ -56,7 +56,7 @@ data = [
     ["CNN-LSTM (bs = 8)", f"{np.load('CNN_LSTM_model_8_train_time.npy')[0]:.2f}", f"{np.load('CNN_LSTM_model_8_peak_mem_usage.npy')[0]:.2f}", f"{np.load('CNN_LSTM_model_8_best_validation_accuracy.npy')[0]:.2f}"]
 ]
 
-columns = ["Model", "Training Time (minutes)", "Train Peak Mem Usage (MB)", "Validation Accuracy (%)"]
+columns = ["Model", "Training Time (minutes)", "Train Peak Mem Usage (MB)", "Peak validation Accuracy (%)"]
 
 fig, ax = plt.subplots()
 fig.figsize = (15, 6)
