@@ -277,6 +277,6 @@ def batch_size_8_training():
 # prevents training from being done when this script is imported as a module, e.g for testing
 if __name__ == '__main__':
 
-    print(batch_size_6_training())
+    #print(batch_size_6_training())
     print(batch_size_8_training())
 
