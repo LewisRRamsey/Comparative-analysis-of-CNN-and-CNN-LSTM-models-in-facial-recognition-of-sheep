@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-'''
 
 # loading in the training accuracies for CNN with batch size 6 and 8
 CNN_6_train_accuracies = np.load('CNN_model_6_train_accuracies.npy')
@@ -46,7 +45,7 @@ plt.legend()
 plt.tight_layout()
 plt.show()
 
-'''
+
 
 # creating a table to compare the peak validation accuracy, training time and training peak memory usage for the CNN and CNN-LSTM models with batch sizes of 6 and 8
 
@@ -72,7 +71,7 @@ table.auto_set_font_size(True)
 table.scale(1.25, 1.25)
 plt.show()
 
-'''
+
 
 # creating a table to compare the test accuracy, precision, recall and F1 score for the CNN and CNN-LSTM models with batch sizes of 6 and 8
 data = [
@@ -97,7 +96,6 @@ table.auto_set_font_size(True)
 table.scale(1.25, 1.25)
 plt.show()
 
-'''
 
 # creating a table to compare the test time and memory usage for the CNN and CNN-LSTM models with batch sizes of 6 and 8
 data = [
